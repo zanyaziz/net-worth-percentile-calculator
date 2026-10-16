@@ -75,10 +75,27 @@
       .strip .v{font-size:20px;font-weight:700}
       .strip .v small{font-size:13px;color:var(--muted);font-weight:600}
 
-      .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 18px}
+      .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 18px;align-items:flex-start}
       .toolbar button{font:inherit;font-weight:600;font-size:14px;border-radius:9px;padding:9px 16px;cursor:pointer;border:1px solid var(--line-strong);background:var(--panel);color:var(--ink)}
       .toolbar button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
       .toolbar button:hover{filter:brightness(1.05)}
+
+      /* sample-household nudge bubble */
+      .samplewrap{display:block}
+      .samplebubble{
+        display:block;position:relative;margin-top:12px;
+        background:var(--accent);color:var(--accent-ink);
+        font-size:13.5px;font-weight:600;line-height:1.4;
+        padding:10px 13px;border-radius:10px;box-shadow:var(--shadow);
+        width:max-content;max-width:min(300px,82vw);
+        animation:bubbleBob 2.6s ease-in-out infinite;
+      }
+      .samplebubble::before{
+        content:"";position:absolute;left:28px;top:-6px;width:12px;height:12px;
+        background:var(--accent);transform:rotate(45deg);border-radius:2px;
+      }
+      @keyframes bubbleBob{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+      @media (prefers-reduced-motion: reduce){.samplebubble{animation:none}}
 
       .layout{display:grid;grid-template-columns:minmax(0,1fr) 392px;gap:22px;align-items:start}
       @media (max-width:920px){.layout{grid-template-columns:1fr}}
@@ -280,7 +297,10 @@
 
       <div id="tab-calculator" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnCalc">
       <div class="toolbar">
-        <button type="button" class="primary" id="btnSample">Load a sample household</button>
+        <span class="samplewrap">
+          <button type="button" class="primary" id="btnSample">Load a sample household</button>
+          <span class="samplebubble" id="sampleBubble" role="note">New here? Start with the sample — a filled-in household you can explore first, then swap in your own numbers.</span>
+        </span>
         <button type="button" id="btnClear">Clear everything</button>
       </div>
 
@@ -1022,6 +1042,7 @@ function drawLadder(s){
 function setRows(id,rows){ var c=$(id); c.innerHTML=""; rows.forEach(function(r){ c.appendChild(r); }); }
 function fmtField(elm,val){ elm.value=val; elm.dispatchEvent(new Event("focusout",{bubbles:true})); }
 $("btnSample").addEventListener("click",function(){
+  $("sampleBubble").classList.add("hidden");
   fmtField($("incSalary"),"285000");
   fmtField($("incBonus"),"45000");
   $("incStockLabel").value="ACME — employer RSUs";
