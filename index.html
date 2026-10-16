@@ -212,6 +212,44 @@
       footer a{color:var(--accent)}
       footer b{color:var(--muted)}
       .hidden{display:none !important}
+
+      /* tabs */
+      .tabs{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px;margin:18px 0 0;box-shadow:var(--shadow);width:fit-content;max-width:100%;flex-wrap:wrap}
+      .tabbtn{font:inherit;font-weight:700;font-size:14.5px;border:1px solid transparent;background:transparent;color:var(--muted);border-radius:999px;padding:10px 18px;cursor:pointer;white-space:nowrap}
+      .tabbtn[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+      .tabbtn small{display:block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;opacity:.85;line-height:1.2}
+      .tab-panel{margin-top:0}
+
+      /* monte carlo */
+      .mc-grid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:22px;align-items:start}
+      @media (max-width:920px){.mc-grid{grid-template-columns:1fr}}
+      .mc-controls .assumps{grid-template-columns:1fr 1fr}
+      @media (max-width:560px){.mc-controls .assumps{grid-template-columns:1fr}}
+      .mc-run{width:100%;margin-top:16px;background:var(--accent);color:var(--accent-ink);border:1px solid var(--accent);font:inherit;font-weight:800;font-size:15px;border-radius:10px;padding:13px 16px;cursor:pointer}
+      .mc-run:hover{filter:brightness(1.06)}
+      .mc-note{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.5}
+      .mc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+      @media (max-width:560px){.mc-stats{grid-template-columns:1fr 1fr}}
+      .mc-stat{border:1px solid var(--line);border-radius:11px;padding:12px 13px;background:var(--panel-2)}
+      .mc-stat .k{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);font-weight:700}
+      .mc-stat .v{font-size:20px;font-weight:800;letter-spacing:-.01em;margin-top:2px}
+      .mc-stat .s{font-size:12.5px;color:var(--muted)}
+      .probrow{display:grid;grid-template-columns:92px 1fr 62px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+      .probrow:last-child{border-bottom:none}
+      .probrow .pl{font-size:13.5px;font-weight:700}
+      .probrow .pv{font-size:14px;font-weight:700;text-align:right}
+      .probtrack{height:12px;background:var(--track);border-radius:999px;overflow:hidden}
+      .probfill{height:100%;background:var(--accent);border-radius:999px;min-width:2px}
+      .probfill.gold{background:var(--gold)}
+      input[type=range]{width:100%;accent-color:var(--accent)}
+      table.odds{width:100%;border-collapse:collapse;font-size:14px}
+      table.odds th{text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);padding:4px 6px 6px 0;font-weight:700}
+      table.odds th:first-child{text-align:left}
+      table.odds td{padding:8px 6px 8px 0;border-top:1px solid var(--line);text-align:right;vertical-align:top}
+      table.odds td:first-child{text-align:left;padding-right:6px}
+      table.odds .barwrap{height:6px;background:var(--track);border-radius:999px;overflow:hidden;margin-top:5px;min-width:64px}
+      table.odds .barfill{height:100%;background:var(--accent);border-radius:999px}
+      @media (max-width:560px){table.odds{font-size:13px}table.odds .barwrap{min-width:40px}}
     </style>
   </head>
   <body>
@@ -221,6 +259,11 @@
         <p>Build your balance sheet — income, cash, properties, brokerage accounts, debts — and see your <b>U.S. household percentile</b>, the next rung above you, and <b>how many years of saving at your current pace</b> it takes to get there while the bar itself keeps rising.</p>
       </div>
 
+      <div class="tabs" role="tablist" aria-label="Calculator views">
+        <button type="button" class="tabbtn" role="tab" id="tabBtnCalc" aria-selected="true" aria-controls="tab-calculator" data-tab="calculator">Tab 1 — Your percentile today<small>Where you stand &amp; years to next rung</small></button>
+        <button type="button" class="tabbtn" role="tab" id="tabBtnMC" aria-selected="false" aria-controls="tab-montecarlo" data-tab="montecarlo">Tab 2 — Monte Carlo: your odds<small>2,000 simulated futures, not one path</small></button>
+      </div>
+
       <div class="strip" aria-live="polite">
         <div class="cell"><span class="k">Net worth</span><span class="v mono" id="stripNW">—</span></div>
         <div class="cell"><span class="k">Est. percentile</span><span class="v" id="stripPct">—</span></div>
@@ -228,6 +271,7 @@
         <div class="cell"><span class="k">Years at your pace</span><span class="v" id="stripYears">—</span></div>
       </div>
 
+      <div id="tab-calculator" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnCalc">
       <div class="toolbar">
         <button type="button" class="primary" id="btnSample">Load a sample household</button>
         <button type="button" id="btnClear">Clear everything</button>
@@ -404,10 +448,77 @@
           </div>
         </aside>
       </div>
+      </div><!-- /tab-calculator -->
+
+      <div id="tab-montecarlo" class="tab-panel hidden" role="tabpanel" aria-labelledby="tabBtnMC">
+        <div class="herocard">
+          <h2>Monte Carlo — what are the odds?</h2>
+          <p class="hero-sub">Tab 1 assumes your return is the same every year. Real markets aren’t. This tab runs thousands of different market histories using the <b>same balance sheet and savings from Tab 1</b> — same starting net worth, same annual savings, same mean return — but each year’s return is drawn at random. The spread of outcomes is the honest answer: a median, a bad-luck path, a good-luck path, and your chance of clearing each percentile bar while that bar keeps rising.</p>
+          <p class="hero-verdict" id="mcVerdict"><span class="empty">Enter your numbers in Tab 1 (or load the sample), then run the simulation.</span></p>
+          <div class="chartwrap" id="mcFanChart"></div>
+          <div class="legend">
+            <span><span class="sw" style="background:var(--accent)"></span>Median outcome</span>
+            <span><span class="sw" style="background:#9ecbb6"></span>Middle 50% (25th–75th)</span>
+            <span><span class="sw" style="background:var(--track)"></span>10th–90th range</span>
+            <span><span class="sw" style="background:var(--gold)"></span><span id="mcFanBarLabel">Next rung bar</span></span>
+            <span><span class="sw" style="background:var(--faint)"></span><span id="mcFanCurrLabel">Current rung bar</span></span>
+          </div>
+          <div class="chartnote">Fan chart covers 40 years on a log scale, like Tab 1. Each band is built from every simulated path, year by year — not a single forecast. Both bar lines rise at their documented long-run rates.</div>
+        </div>
+
+        <div class="mc-grid">
+          <section class="card mc-controls">
+            <h2>Simulation settings</h2>
+            <p class="sub">Uses your Tab 1 inputs live. Change the mean return, property appreciation, or bar adjustment in Tab 1 §6 and re-run.</p>
+            <div style="display:grid;gap:14px">
+              <div class="assump">
+                <label for="mcVol">Market volatility — <span id="mcVolLabel" class="mono">15% / yr</span></label>
+                <input id="mcVol" type="range" min="5" max="30" step="1" value="15" />
+                <div class="note">Standard deviation of each year’s random return, around your Tab 1 mean return (default 6%). 15% is a rough long-run guide for a stock-heavy portfolio; past volatility is only a guide. Higher = wider spread and a lower median (volatility drag).</div>
+              </div>
+              <div class="assump">
+                <label for="mcSims">Number of simulations</label>
+                <select id="mcSims">
+                  <option value="500">500 paths — fast preview</option>
+                  <option value="2000" selected>2,000 paths — standard</option>
+                  <option value="5000">5,000 paths — smoothest</option>
+                </select>
+                <div class="note">The standard run is 2,000 simulated futures over 40 years, in your browser.</div>
+              </div>
+            </div>
+            <div class="sectotal"><span>Starting net worth (Tab 1)</span><b class="mono" id="mcStartNW">—</b></div>
+            <div class="sectotal" style="border:none;margin-top:4px;padding-top:0"><span>Mean return / Savings</span><b class="mono" id="mcStartAssump">—</b></div>
+            <button type="button" class="mc-run" id="btnRunMC">▶ Run simulation</button>
+            <p class="mc-note"><b>Honesty notes:</b> returns are random draws around the assumed average, so these are illustrative odds, not predictions. Past volatility is a rough guide only. The percentile bars are held to their documented long-run growth (~5.5%/yr, plus your Tab 1 adjustment) for clarity — the uncertainty shown here is your path, not the bars. Each year: invested assets earn the random return, your Tab 1 savings are added, cash stays flat, property equity follows your appreciation assumption, and other liabilities stay flat. Nothing is stored or sent — everything runs client-side, matching Tab 1.</p>
+          </section>
+
+          <div>
+            <section class="card">
+              <h2>Where you could land</h2>
+              <p class="sub" id="mcSummarySub">Run the simulation to see the median and range at 10, 20, and 30 years.</p>
+              <div class="mc-stats">
+                <div class="mc-stat"><div class="k">In 10 years · median</div><div class="v mono" id="mcMed10">—</div><div class="s" id="mcRange10">10th–90th: —</div></div>
+                <div class="mc-stat"><div class="k">In 20 years · median</div><div class="v mono" id="mcMed20">—</div><div class="s" id="mcRange20">10th–90th: —</div></div>
+                <div class="mc-stat"><div class="k">In 30 years · median</div><div class="v mono" id="mcMed30">—</div><div class="s" id="mcRange30">10th–90th: —</div></div>
+              </div>
+              <h3 style="font-size:13px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);margin:18px 0 6px">Odds of ever reaching each rung</h3>
+              <p style="font-size:13px;color:var(--muted);margin:0 0 8px">Share of simulations whose net worth reaches that rung’s (rising) bar <b>at any point</b> within 10, 20, or 30 years — not just where they end up.</p>
+              <div id="mcProbs"><p class="empty">No results yet — press Run simulation.</p></div>
+            </section>
+
+            <section class="card">
+              <h2>Distribution at 30 years</h2>
+              <p class="sub">Every simulated path’s net worth at year 30, grouped into buckets. The gold line is the year-30 value of your next rung’s bar.</p>
+              <div class="chartwrap" id="mcHist"></div>
+              <div class="chartnote" id="mcHistNote">Run the simulation to see the distribution.</div>
+            </section>
+          </div>
+        </div>
+      </div><!-- /tab-montecarlo -->
 
       <footer>
         <p><b>Thresholds: Federal Reserve Survey of Consumer Finances 2025 (via DQYDJ).</b> Full percentile table as tabulated from the SCF public microdata by <a href="https://dqydj.com/net-worth-percentiles/" target="_blank" rel="noopener">DQYDJ’s net worth percentile analysis</a>.</p>
-        <p><b>How this works.</b> The percentile bars are moving targets: in the simulation each bar rises at its documented long-run SCF rate — about 5.5%/yr for every rung from 1989 to 2025 (the 90th-percentile bar compounded at 5.52%/yr; the 95th and 99th at 5.59%/yr; the 93rd, 97th and 98th are assigned that same common pace, since they were only published in later surveys). Recent survey windows ran faster than the long run, which is what the bar-growth adjustment is for. Your percentile between published rungs is a log-linear interpolation — an estimate, not a measurement. The projection holds your income, savings, return, and appreciation constant, adds your savings to your invested assets each year, keeps liabilities flat, and ignores market swings and life changes. These are scenarios, not forecasts, and not financial advice. Your entries never leave this page — nothing is stored or sent anywhere.</p>
+        <p><b>How this works.</b> The percentile bars are moving targets: in the simulation each bar rises at its documented long-run SCF rate — about 5.5%/yr for every rung from 1989 to 2025 (the 90th-percentile bar compounded at 5.52%/yr; the 95th and 99th at 5.59%/yr; the 93rd, 97th and 98th are assigned that same common pace, since they were only published in later surveys). Recent survey windows ran faster than the long run, which is what the bar-growth adjustment is for. Your percentile between published rungs is a log-linear interpolation — an estimate, not a measurement. The Tab 1 projection holds your income, savings, return, and appreciation constant, adds your savings to your invested assets each year, keeps liabilities flat, and ignores market swings and life changes. Tab 2 (Monte Carlo) relaxes that last part: returns vary randomly each year around the same mean, so you see a distribution and odds instead of a single line. These are scenarios, not forecasts, and not financial advice. Your entries never leave this page — nothing is stored or sent anywhere.</p>
       </footer>
     </div>
 
@@ -714,6 +825,7 @@ function recalc(){
     ["resComp","resNext","resWhat","resLadder"].forEach(function(id){ $(id).classList.add("hidden"); });
     $("heroVerdict").innerHTML='<span class="empty">Enter your numbers below and the race appears here.</span>';
     $("heroChart").innerHTML="";
+    if(typeof syncMCStart==="function") syncMCStart(s);
     return;
   }
   $("resEmpty").classList.add("hidden"); $("resBody").classList.remove("hidden");
@@ -804,6 +916,7 @@ function recalc(){
     drawHero(s,path,nextM,t0,rate0,yrs0);
   }
   drawLadder(s);
+  if(typeof syncMCStart==="function") syncMCStart(s);
 }
 
 /* ---------- hero chart: projected NW vs the next bar ---------- */
@@ -938,6 +1051,260 @@ $("btnClear").addEventListener("click",function(){
   setRows("debtRows",[simpleRow("","","Debt (e.g. car loan, credit card)")]);
   recalc();
 });
+
+/* ---------- Tabs ---------- */
+var mcHasRun=false, mcDebounce=null;
+function switchTab(name){
+  var isMC = name==="montecarlo";
+  $("tab-calculator").classList.toggle("hidden", isMC);
+  $("tab-montecarlo").classList.toggle("hidden", !isMC);
+  $("tabBtnCalc").setAttribute("aria-selected", isMC?"false":"true");
+  $("tabBtnMC").setAttribute("aria-selected", isMC?"true":"false");
+  if(isMC){
+    syncMCStart(readState());
+    if(!mcHasRun){
+      var s=readState();
+      if(s.assets>0||s.liab>0||s.income>0) runMonteCarlo();
+    }
+  }
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+document.querySelectorAll(".tabbtn").forEach(function(b){
+  b.addEventListener("click",function(){ switchTab(b.dataset.tab); });
+});
+$("mcVol").addEventListener("input",function(){ $("mcVolLabel").textContent=$("mcVol").value+"% / yr"; scheduleMCRerun(); });
+$("mcSims").addEventListener("change",function(){ scheduleMCRerun(); });
+function scheduleMCRerun(){
+  if($("tab-montecarlo").classList.contains("hidden")) return;
+  if(!mcHasRun) return;
+  clearTimeout(mcDebounce);
+  mcDebounce=setTimeout(function(){ runMonteCarlo(); },600);
+}
+/* Auto-rerun (debounced) when Tab 1 inputs change while Tab 2 is open */
+document.addEventListener("input",function(e){
+  if(e.target && e.target.id==="mcVol") return;
+  scheduleMCRerun();
+});
+
+/* ---------- Monte Carlo ---------- */
+function syncMCStart(s){
+  if(!s) s=readState();
+  var has=(s.assets>0||s.liab>0||s.income>0);
+  $("mcStartNW").textContent=has? fmt(s.nw) : "— enter data in Tab 1";
+  $("mcStartAssump").textContent=has? ((Math.round(s.r*1000)/10)+"% return · "+fmt(s.savings)+"/yr saved") : "—";
+}
+function randn(){
+  var u=0,v=0;
+  while(u===0) u=Math.random();
+  while(v===0) v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+function quantile(sorted,q){
+  if(!sorted.length) return 0;
+  var idx=(sorted.length-1)*q, lo=Math.floor(idx), hi=Math.ceil(idx);
+  if(lo===hi) return sorted[lo];
+  return sorted[lo]+(sorted[hi]-sorted[lo])*(idx-lo);
+}
+function topPctForNWAtYear(nw, years, barAdj){
+  var g=Math.pow(1+(BAR_BASE+barAdj)/100, years);
+  var equiv=g>0? nw/g : nw;
+  var p=percentileOf(equiv);
+  return Math.round((100-p)*10)/10;
+}
+function runMonteCarlo(){
+  var s=readState();
+  var has=(s.assets>0||s.liab>0||s.income>0);
+  if(!has){
+    $("mcVerdict").innerHTML='<span style="color:var(--neg)">No data yet.</span> Go to Tab 1, enter your numbers or load the sample household, then come back and run again.';
+    return;
+  }
+  var H=40; /* fan chart and simulation horizon: 40 years; headline stats at 10/20/30 */
+  var N=parseInt($("mcSims").value,10)||2000;
+  var vol=Math.max(5,Math.min(30,parseFloat($("mcVol").value)||15))/100;
+  var mean=s.r;
+  var thisYear=new Date().getFullYear();
+
+  var byYear=[]; for(var t=0;t<=H;t++) byYear.push([]);
+  /* Store all paths only as yearly arrays + ever-reach tracking */
+  var oddsRungs=[90,93,95,97,98,99]; /* Top 10%, 7%, 5%, 3%, 2%, 1% */
+  var ever={}; oddsRungs.forEach(function(m){ ever[m]={10:0,20:0,30:0}; });
+  var finals30=[];
+  for(var i=0;i<N;i++){
+    var inv=s.invested+s.otherAssets, eq=s.propEq;
+    var reached={}; oddsRungs.forEach(function(m){ reached[m]=false; });
+    byYear[0].push(s.nw);
+    for(var tt=1; tt<=H; tt++){
+      var r = mean + vol*randn();
+      if(r<-0.95) r=-0.95;
+      inv = inv*(1+r) + s.savings;
+      eq = eq*(1+s.apprec);
+      var nw = inv + s.cash + eq - s.debts;
+      byYear[tt].push(nw);
+      if(tt===30) finals30.push(nw);
+      /* ever-reach check against the bar in that same year */
+      if(tt===10||tt===20||tt===30){
+        oddsRungs.forEach(function(m){
+          if(!reached[m]){
+            var rate=barRatePct(m,s.barAdj)/100;
+            /* check every year up to tt would be ideal; we approximate by tracking continuously below */
+          }
+        });
+      }
+      oddsRungs.forEach(function(m){
+        if(!reached[m]){
+          var rate2=barRatePct(m,s.barAdj)/100;
+          var barNow=thr(m)*Math.pow(1+rate2,tt);
+          if(nw>=barNow) reached[m]=tt;
+        }
+      });
+      if(tt===10||tt===20||tt===30){
+        oddsRungs.forEach(function(m){
+          if(reached[m] && reached[m]<=tt) ever[m][tt]++;
+        });
+      }
+    }
+  }
+  function statsAt(y){
+    var sorted=byYear[y].slice().sort(function(a,b){return a-b;});
+    return {med:quantile(sorted,0.5), p10:quantile(sorted,0.1), p90:quantile(sorted,0.9), sorted:sorted};
+  }
+  var s10=statsAt(10), s20=statsAt(20), s30=statsAt(30);
+  $("mcMed10").textContent=fmt(s10.med); $("mcRange10").textContent="10th–90th: "+fmt(s10.p10)+" – "+fmt(s10.p90);
+  $("mcMed20").textContent=fmt(s20.med); $("mcRange20").textContent="10th–90th: "+fmt(s20.p10)+" – "+fmt(s20.p90);
+  $("mcMed30").textContent=fmt(s30.med); $("mcRange30").textContent="10th–90th: "+fmt(s30.p10)+" – "+fmt(s30.p90);
+  $("mcSummarySub").textContent=N.toLocaleString()+" simulated futures over 40 years · mean return "+(Math.round(mean*1000)/10)+"% · volatility "+(Math.round(vol*1000)/10)+"% · saving "+fmt(s.savings)+"/yr. Medians deflate the bars for the verdict below.";
+
+  /* Odds table */
+  var html='<table class="odds"><thead><tr><th>Rung</th><th>in 10 yrs</th><th>in 20 yrs</th><th>in 30 yrs</th></tr></thead><tbody>';
+  oddsRungs.forEach(function(m){
+    function cell(y){
+      var pct=ever[m][y]/N*100;
+      return '<td><span class="mono" style="font-weight:700">'+(Math.round(pct*10)/10)+'%</span><div class="barwrap"><div class="barfill" style="width:'+Math.max(pct,0.5)+'%"></div></div></td>';
+    }
+    html+='<tr><td><b>'+esc(rungName(m))+'</b><div style="font-size:12px;color:var(--faint)">bar today '+fmt(thr(m))+'</div></td>'+cell(10)+cell(20)+cell(30)+'</tr>';
+  });
+  html+='</tbody></table><p style="font-size:12.5px;color:var(--faint);margin-top:8px">“Ever reach” counts a future if it touches the rung at any year up to that point, even if it later falls back — bars rise each year at their documented rates.</p>';
+  $("mcProbs").innerHTML=html;
+
+  /* Rungs for fan chart */
+  var upcoming=MILESTONES.filter(function(m){ return thr(m)>s.nw; });
+  var nextM=upcoming.length? upcoming[0]:null;
+  var below=MILESTONES.filter(function(m){ return thr(m)<=s.nw; });
+  var currM=below.length? below[below.length-1]:null;
+
+  /* Verdict in the spec's plain language */
+  var probTop2_30 = ever[98][30]/N*100;
+  var medianTop30 = topPctForNWAtYear(s30.med,30,s.barAdj);
+  if(s.nw<=0){
+    $("mcVerdict").innerHTML='<span style="color:var(--neg)">Net worth is not positive yet,</span> so the fan chart cannot draw on a log scale — but the odds above still run. In '+N.toLocaleString()+' simulated futures, you reach the top 2% at any point within 30 years in about <span class="good">'+(Math.round(probTop2_30*10)/10)+'%</span> of them; the median future at 30 years is '+fmt(s30.med)+'.';
+  } else {
+    $("mcVerdict").innerHTML='In '+N.toLocaleString()+' simulated futures, you reach the <span class="good">top 2%</span> in about <span class="good">'+(Math.round(probTop2_30*10)/10)+'%</span> of them (at any point within 30 years); the median future lands in the <span class="good">top ~'+medianTop30+'%</span> — '+fmt(s30.med)+' at year 30, with a 10th–90th range of '+fmt(s30.p10)+' to '+fmt(s30.p90)+'.';
+  }
+  if(nextM) $("mcFanBarLabel").textContent="Next rung: "+rungName(nextM)+" bar";
+  if(currM) $("mcFanCurrLabel").textContent="Current rung: "+rungName(currM)+" bar"; else $("mcFanCurrLabel").textContent="Current rung bar";
+
+  drawMCFan(byYear,H,nextM,currM,s);
+  var sorted30=finals30.slice().sort(function(a,b){return a-b;});
+  drawMCHist(sorted30,nextM,30,s);
+  mcHasRun=true;
+}
+function drawMCFan(byYear,H,nextM,currM,s){
+  var box=$("mcFanChart");
+  if(s.nw<=0){ box.innerHTML='<p class="empty">Fan chart appears once net worth is positive.</p>'; return; }
+  var bands=byYear.map(function(arr){
+    var sorted=arr.slice().sort(function(a,b){return a-b;});
+    return {p10:quantile(sorted,0.1),p25:quantile(sorted,0.25),p50:quantile(sorted,0.5),p75:quantile(sorted,0.75),p90:quantile(sorted,0.9)};
+  });
+  var thisYear=new Date().getFullYear();
+  var allVals=[]; bands.forEach(function(b){ allVals.push(b.p10,b.p90); });
+  var lo=Math.min.apply(null,allVals.concat([s.nw]))*0.9;
+  var hi=Math.max.apply(null,allVals)*1.08;
+  function barSeries(m){
+    if(!m) return null;
+    var rate=barRatePct(m,s.barAdj)/100, t0=thr(m), arr=[];
+    for(var t=0;t<=H;t++) arr.push(t0*Math.pow(1+rate,t));
+    return arr;
+  }
+  var barArr=barSeries(nextM), currArr=barSeries(currM);
+  if(barArr){ hi=Math.max(hi,barArr[H]*1.05); lo=Math.min(lo,thr(nextM)*0.9); }
+  if(currArr){ lo=Math.min(lo,currArr[0]*0.9); }
+  lo=Math.max(lo,100);
+  var llo=Math.log10(lo), lhi=Math.log10(Math.max(hi,lo*10));
+  var W=720,Hg=320,pl=14,pr=118,pt=16,pb=28;
+  function X(t){ return pl+(t/H)*(W-pl-pr); }
+  function Y(v){ return pt+(1-(Math.log10(Math.max(v,1))-llo)/(lhi-llo))*(Hg-pt-pb); }
+  function lineFromArr(arr){ return arr.map(function(v,i){ return (i?"L":"M")+X(i).toFixed(1)+" "+Y(v).toFixed(1); }).join(" "); }
+  function line(key){ return bands.map(function(b,i){ return (i?"L":"M")+X(i).toFixed(1)+" "+Y(b[key]).toFixed(1); }).join(" "); }
+  function area(topKey,botKey){
+    var top=bands.map(function(b,i){ return (i?"L":"M")+X(i).toFixed(1)+" "+Y(b[topKey]).toFixed(1); }).join(" ");
+    var bot=""; for(var i=bands.length-1;i>=0;i--){ bot+="L"+X(i).toFixed(1)+" "+Y(bands[i][botKey]).toFixed(1)+" "; }
+    return top+" "+bot+" Z";
+  }
+  var ticks=[1e4,3e4,1e5,3e5,1e6,3e6,1e7,3e7,1e8,3e8,1e9].filter(function(v){ return v>=Math.pow(10,llo)&&v<=Math.pow(10,lhi); });
+  var svg='<svg viewBox="0 0 '+W+' '+Hg+'" role="img" aria-label="Monte Carlo fan chart of projected net worth over 40 years">';
+  ticks.forEach(function(v){
+    svg+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="var(--line)"/>'
+      +'<text x="'+(pl+2)+'" y="'+(Y(v)-4)+'" font-size="11" fill="var(--faint)" font-family="IBM Plex Mono,monospace">'+fmtShort(v)+'</text>';
+  });
+  for(var xt=0;xt<=H;xt+=10){
+    var anch=xt===0?"start":(xt===H?"end":"middle");
+    svg+='<text x="'+X(xt)+'" y="'+(Hg-6)+'" font-size="11" fill="var(--faint)" text-anchor="'+anch+'">'+(thisYear+xt)+'</text>';
+  }
+  svg+='<path d="'+area("p90","p10")+'" fill="var(--track)" opacity="0.9" stroke="none"/>';
+  svg+='<path d="'+area("p75","p25")+'" fill="#9ecbb6" opacity="0.55" stroke="none"/>';
+  if(currArr) svg+='<path d="'+lineFromArr(currArr)+'" fill="none" stroke="var(--faint)" stroke-width="2" stroke-dasharray="6 4"/>';
+  if(barArr) svg+='<path d="'+lineFromArr(barArr)+'" fill="none" stroke="var(--gold)" stroke-width="3"/>';
+  svg+='<path d="'+line("p50")+'" fill="none" stroke="var(--accent)" stroke-width="3"/>';
+  var last=bands[H];
+  svg+='<text x="'+(W-pr+8)+'" y="'+(Y(last.p90)+4)+'" font-size="12" font-weight="700" fill="var(--muted)">90th '+fmtShort(last.p90)+'</text>';
+  svg+='<text x="'+(W-pr+8)+'" y="'+(Y(last.p50)+4)+'" font-size="12.5" font-weight="800" fill="var(--accent)">median '+fmtShort(last.p50)+'</text>';
+  svg+='<text x="'+(W-pr+8)+'" y="'+(Y(last.p10)+4)+'" font-size="12" font-weight="700" fill="var(--muted)">10th '+fmtShort(last.p10)+'</text>';
+  if(barArr) svg+='<text x="'+(W-pr+8)+'" y="'+(Y(barArr[H])+4)+'" font-size="12" font-weight="700" fill="var(--gold)">next bar '+fmtShort(barArr[H])+'</text>';
+  if(currArr) svg+='<text x="'+(W-pr+8)+'" y="'+(Y(currArr[H])+4)+'" font-size="11.5" font-weight="600" fill="var(--faint)">curr. bar '+fmtShort(currArr[H])+'</text>';
+  svg+="</svg>";
+  box.innerHTML=svg;
+}
+function drawMCHist(sortedFinals,nextM,H,s){
+  var box=$("mcHist");
+  var n=sortedFinals.length;
+  var lo=quantile(sortedFinals,0.02), hi=quantile(sortedFinals,0.98);
+  if(hi<=lo){ hi=lo+1; }
+  var pad=(hi-lo)*0.08; lo-=pad; hi+=pad;
+  var BINS=22, counts=[]; for(var bi=0;bi<BINS;bi++) counts.push(0);
+  sortedFinals.forEach(function(v){
+    var idx=Math.floor((v-lo)/(hi-lo)*BINS);
+    if(idx<0) idx=0; if(idx>=BINS) idx=BINS-1;
+    counts[idx]++;
+  });
+  var maxC=Math.max.apply(null,counts);
+  var W=720,Hg=220,pl=14,pr=14,pt=14,pb=30;
+  var cw=(W-pl-pr)/BINS;
+  var svg='<svg viewBox="0 0 '+W+' '+Hg+'" role="img" aria-label="Histogram of simulated net worth at 30 years">';
+  for(var i=0;i<BINS;i++){
+    var h=(counts[i]/maxC)*(Hg-pt-pb);
+    var x=pl+i*cw, y=Hg-pb-h;
+    svg+='<rect x="'+(x+1)+'" y="'+y+'" width="'+(cw-2)+'" height="'+h+'" rx="3" fill="var(--accent)" opacity="0.88"/>';
+    if(i%4===0){
+      var val=lo+i*(hi-lo)/BINS;
+      svg+='<text x="'+x+'" y="'+(Hg-8)+'" font-size="10.5" fill="var(--faint)" font-family="IBM Plex Mono,monospace">'+fmtShort(val)+'</text>';
+    }
+  }
+  if(nextM){
+    var rate=barRatePct(nextM,s.barAdj)/100;
+    var barH=thr(nextM)*Math.pow(1+rate,H);
+    if(barH>=lo && barH<=hi){
+      var bx=pl+(barH-lo)/(hi-lo)*(W-pl-pr);
+      svg+='<line x1="'+bx+'" x2="'+bx+'" y1="'+pt+'" y2="'+(Hg-pb)+'" stroke="var(--gold)" stroke-width="3"/>'
+        +'<text x="'+bx+'" y="'+(pt-2)+'" font-size="11.5" font-weight="800" fill="var(--gold)" text-anchor="middle">'+esc(rungName(nextM))+' bar '+fmtShort(barH)+'</text>';
+    }
+    $("mcHistNote").textContent="Gold line: the "+rungName(nextM)+" bar at year 30 ("+fmt(barH)+"). Median "+fmt(quantile(sortedFinals,0.5))+" across "+n.toLocaleString()+" paths at year 30.";
+  } else {
+    $("mcHistNote").textContent="Median "+fmt(quantile(sortedFinals,0.5))+" across "+n.toLocaleString()+" paths at year 30.";
+  }
+  svg+="</svg>";
+  box.innerHTML=svg;
+}
+$("btnRunMC").addEventListener("click",runMonteCarlo);
 
 recalc();
 </script>
