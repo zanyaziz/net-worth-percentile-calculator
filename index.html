@@ -1,0 +1,945 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Net Worth Percentile Calculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
+    <style>
+      :root{
+        color-scheme: light dark;
+        --bg:#f6f6f3;
+        --panel:#ffffff;
+        --panel-2:#fbfbf8;
+        --ink:#182119;
+        --muted:#5d6a5f;
+        --faint:#8a968c;
+        --line:#e0e3dc;
+        --line-strong:#c9cec4;
+        --accent:#0b6b4a;
+        --accent-ink:#ffffff;
+        --accent-soft:#e2efe8;
+        --gold:#a86f0d;
+        --gold-soft:#f6ead2;
+        --neg:#b03527;
+        --neg-soft:#f9e6e2;
+        --track:#e8eae4;
+        --shadow:0 1px 2px rgba(20,30,20,.05),0 6px 24px rgba(20,30,20,.05);
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#10130f;
+          --panel:#191d18;
+          --panel-2:#151814;
+          --ink:#e9ede6;
+          --muted:#a3aea2;
+          --faint:#78847a;
+          --line:#2b312a;
+          --line-strong:#3d453c;
+          --accent:#3ec48d;
+          --accent-ink:#0a1510;
+          --accent-soft:#1d2f26;
+          --gold:#e2ac4e;
+          --gold-soft:#33290f;
+          --neg:#e5816f;
+          --neg-soft:#3a1f1a;
+          --track:#272d26;
+          --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.25);
+        }
+      }
+      *{box-sizing:border-box}
+      html{-webkit-text-size-adjust:100%}
+      body{
+        margin:0;background:var(--bg);color:var(--ink);
+        font-family:"Libre Franklin",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+        font-size:15.5px;line-height:1.5;
+      }
+      .mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+      .wrap{max-width:1180px;margin:0 auto;padding:22px 18px 60px}
+      .lede{max-width:780px}
+      .lede h1{font-size:clamp(26px,4.5vw,38px);line-height:1.12;font-weight:800;letter-spacing:-.02em;margin:6px 0 8px}
+      .lede p{margin:0;color:var(--muted);font-size:16px}
+      .lede p b{color:var(--ink)}
+
+      .strip{
+        position:sticky;top:0;z-index:20;margin:18px 0 20px;
+        background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);
+        display:flex;flex-wrap:wrap;gap:6px 26px;align-items:baseline;padding:12px 18px;
+      }
+      .strip .cell{display:flex;flex-direction:column}
+      .strip .k{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);font-weight:600}
+      .strip .v{font-size:20px;font-weight:700}
+      .strip .v small{font-size:13px;color:var(--muted);font-weight:600}
+
+      .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 18px}
+      .toolbar button{font:inherit;font-weight:600;font-size:14px;border-radius:9px;padding:9px 16px;cursor:pointer;border:1px solid var(--line-strong);background:var(--panel);color:var(--ink)}
+      .toolbar button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+      .toolbar button:hover{filter:brightness(1.05)}
+
+      .layout{display:grid;grid-template-columns:minmax(0,1fr) 392px;gap:22px;align-items:start}
+      @media (max-width:920px){.layout{grid-template-columns:1fr}}
+
+      section.card,.rcard,.herocard{
+        background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+        padding:18px;margin-bottom:18px;
+      }
+      section.card > h2{font-size:17px;font-weight:700;margin:0 0 2px;letter-spacing:-.01em}
+      section.card .sub{color:var(--muted);font-size:13.5px;margin:0 0 14px}
+      .sectotal{display:flex;justify-content:space-between;align-items:baseline;border-top:1px dashed var(--line-strong);margin-top:12px;padding-top:10px;font-size:14px;color:var(--muted)}
+      .sectotal b{color:var(--ink);font-size:16px}
+
+      input[type=text],input[type=number],select{
+        padding:9px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--panel-2);
+        color:var(--ink);font:inherit;font-size:14.5px;min-width:0;width:100%;
+      }
+      input:focus,select:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+      .money{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;text-align:right}
+      .lbl{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);font-weight:600}
+
+      /* fixed labelled fields */
+      .frow{display:grid;grid-template-columns:230px 1fr;gap:8px 12px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+      .frow label{font-size:14px;font-weight:600}
+      .frow .hint{grid-column:2;font-size:12.5px;color:var(--faint);margin-top:-3px}
+      .frow-stock{grid-template-columns:230px 1fr 150px}
+      @media (max-width:560px){
+        .frow,.frow-stock{grid-template-columns:1fr}
+        .frow .hint{grid-column:1}
+      }
+      .frow .pctfield{display:flex;align-items:center;gap:6px;border:1px solid var(--line-strong);border-radius:8px;background:var(--panel-2);padding:0 10px}
+      .frow .pctfield input{border:none;background:transparent;padding:9px 0;text-align:right;font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+      .frow .pctfield input:focus{outline:none}
+      .frow .pctfield:focus-within{outline:2px solid var(--accent)}
+
+      /* repeatable rows */
+      .row{display:grid;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+      .row:last-of-type{border-bottom:none}
+      .r-simple{grid-template-columns:1fr 140px 30px}
+      .r-prop{grid-template-columns:1fr 128px 128px 30px}
+      .r-prop .eq{font-size:13px;color:var(--muted);grid-column:1/-1;margin-top:-2px}
+      .r-prop .eq b{color:var(--accent)}
+      @media (max-width:560px){
+        .r-prop{grid-template-columns:1fr 30px}
+        .r-prop .amt{grid-column:1}
+        .r-simple{grid-template-columns:1fr 30px}
+        .r-simple .amt{grid-column:1}
+      }
+      .del{border:none;background:transparent;color:var(--faint);font-size:19px;line-height:1;cursor:pointer;width:30px;height:36px;border-radius:8px;padding:0}
+      .del:hover{color:var(--neg);background:var(--neg-soft)}
+      .addbtn{margin-top:10px;border:1px dashed var(--line-strong);background:transparent;color:var(--accent);font:inherit;font-weight:600;font-size:14px;border-radius:9px;padding:9px 14px;cursor:pointer;width:100%}
+      .addbtn:hover{background:var(--accent-soft);border-color:var(--accent)}
+
+      /* waterfall */
+      .waterfall{margin-top:16px;border-top:1px dashed var(--line-strong);padding-top:14px}
+      .waterfall h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:0 0 10px;font-weight:700}
+      .wf-row{display:grid;grid-template-columns:118px 1fr 118px;gap:10px;align-items:center;padding:4px 0}
+      .wf-row .wl{font-size:13.5px;font-weight:600}
+      .wf-row .wv{font-size:14px;font-weight:700;text-align:right}
+      .wf-track{height:20px;background:var(--track);border-radius:5px;overflow:hidden}
+      .wf-fill{height:100%;border-radius:5px;min-width:2px;transition:width .25s ease}
+      .wf-total{border-top:1px solid var(--line-strong);margin-top:6px;padding-top:8px}
+      @media (max-width:560px){.wf-row{grid-template-columns:96px 1fr 96px}}
+      .wf-note{font-size:12.5px;color:var(--faint);margin-top:8px}
+
+      /* accounts */
+      .acct{border:1px solid var(--line);border-radius:11px;padding:12px;margin-bottom:12px;background:var(--panel-2)}
+      .acct .row{border-bottom:none;padding:3px 0}
+      .r-acct{grid-template-columns:1fr 118px 140px 30px}
+      @media (max-width:560px){.r-acct{grid-template-columns:1fr 30px}.r-acct .amt,.r-acct .typ{grid-column:1}}
+      .modebar{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+      .modebtn{border:1px solid var(--line-strong);background:var(--panel);color:var(--muted);font:inherit;font-size:13px;font-weight:600;border-radius:999px;padding:5px 12px;cursor:pointer}
+      .modebtn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+      .holdings{margin-top:10px;border-top:1px dashed var(--line-strong);padding-top:8px}
+      .holdings .hrow{display:grid;grid-template-columns:1fr 130px 30px;gap:8px;align-items:center;padding:4px 0}
+      .acctsum{font-size:13px;color:var(--muted);margin-top:8px}
+      .acctsum b{color:var(--ink)}
+
+      /* assumptions */
+      .assumps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+      @media (max-width:560px){.assumps{grid-template-columns:1fr}}
+      .assump label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:5px}
+      .assump .field{display:flex;align-items:center;gap:6px;border:1px solid var(--line-strong);border-radius:8px;background:var(--panel-2);padding:0 10px}
+      .assump input{border:none;background:transparent;color:var(--ink);font:inherit;font-size:16px;width:100%;padding:9px 0;text-align:right;font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+      .assump input:focus{outline:none}
+      .assump .field:focus-within{outline:2px solid var(--accent)}
+      .assump .note{font-size:12px;color:var(--faint);margin-top:4px}
+
+      /* hero chart */
+      .herocard{padding:20px}
+      .herocard h2{font-size:19px;font-weight:800;letter-spacing:-.01em;margin:0 0 2px}
+      .herocard .hero-sub{color:var(--muted);font-size:14px;margin:0 0 12px;max-width:760px}
+      .hero-verdict{font-size:16.5px;font-weight:700;margin:0 0 10px}
+      .hero-verdict .good{color:var(--accent)}
+      .hero-verdict .bad{color:var(--neg)}
+      .chartwrap{width:100%}
+      .chartwrap svg{width:100%;height:auto;display:block}
+      .chartnote{font-size:12.5px;color:var(--faint);margin-top:6px}
+      .legend{display:flex;gap:16px;font-size:12.5px;color:var(--muted);margin-top:4px;flex-wrap:wrap}
+      .legend .sw{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+
+      /* results rail */
+      aside.results{position:sticky;top:74px}
+      @media (max-width:920px){aside.results{position:static}}
+      .rcard h2{font-size:13px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin:0 0 10px;font-weight:700}
+      .bignum{font-size:40px;font-weight:800;letter-spacing:-.02em;line-height:1.05}
+      .pctbadge{display:inline-block;margin-top:10px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:15px;border-radius:999px;padding:6px 14px}
+      .pctsub{color:var(--muted);font-size:14px;margin-top:9px}
+      .statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-top:14px}
+      .statgrid .k{font-size:11.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+      .statgrid .v{font-size:16.5px;font-weight:700}
+      .empty{color:var(--muted);font-size:14.5px}
+      .nexttarget{font-size:21px;font-weight:800;letter-spacing:-.01em}
+      .nexttarget span{color:var(--gold)}
+      .gapline{font-size:15px;margin-top:6px}
+      .yearsline{margin-top:12px;background:var(--gold-soft);border-radius:10px;padding:11px 13px;font-size:14.5px}
+      .yearsline b{font-size:16px}
+      table.ladder{width:100%;border-collapse:collapse;font-size:14px}
+      table.ladder th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);padding:4px 6px 6px 0;font-weight:600}
+      table.ladder td{padding:7px 6px 7px 0;border-top:1px solid var(--line);vertical-align:top}
+      table.ladder td.r,table.ladder th.r{text-align:right;padding-right:0}
+      .wtt .bignum2{font-size:30px;font-weight:800;letter-spacing:-.01em}
+      .wtt p{margin:6px 0 0;color:var(--muted);font-size:14px}
+      .compbar{display:flex;height:16px;border-radius:5px;overflow:hidden;background:var(--track);margin:8px 0 10px}
+      .compbar div{height:100%}
+      .complist{font-size:13.5px;display:grid;gap:5px}
+      .complist .ci{display:flex;align-items:center;gap:8px;color:var(--muted)}
+      .complist .dot{width:10px;height:10px;border-radius:3px;flex:none}
+      .complist b{color:var(--ink);margin-left:auto}
+      footer{color:var(--faint);font-size:12.5px;max-width:860px;margin-top:8px}
+      footer a{color:var(--accent)}
+      footer b{color:var(--muted)}
+      .hidden{display:none !important}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="lede">
+        <h1>Where does your net worth rank?</h1>
+        <p>Build your balance sheet — income, cash, properties, brokerage accounts, debts — and see your <b>U.S. household percentile</b>, the next rung above you, and <b>how many years of saving at your current pace</b> it takes to get there while the bar itself keeps rising.</p>
+      </div>
+
+      <div class="strip" aria-live="polite">
+        <div class="cell"><span class="k">Net worth</span><span class="v mono" id="stripNW">—</span></div>
+        <div class="cell"><span class="k">Est. percentile</span><span class="v" id="stripPct">—</span></div>
+        <div class="cell"><span class="k">Next rung</span><span class="v" id="stripNext">—</span></div>
+        <div class="cell"><span class="k">Years at your pace</span><span class="v" id="stripYears">—</span></div>
+      </div>
+
+      <div class="toolbar">
+        <button type="button" class="primary" id="btnSample">Load a sample household</button>
+        <button type="button" id="btnClear">Clear everything</button>
+      </div>
+
+      <div class="herocard" id="heroCard">
+        <h2>The climb to the next rung</h2>
+        <p class="hero-sub">Your projected net worth, year by year, if you keep earning and saving exactly what you save now — plotted against the next percentile bar, which rises every year at its own long-run pace. Both lines come from the same simulation as the years figure, so they always agree.</p>
+        <p class="hero-verdict" id="heroVerdict"><span class="empty">Enter your numbers below and the race appears here.</span></p>
+        <div class="chartwrap" id="heroChart"></div>
+        <div class="legend">
+          <span><span class="sw" style="background:var(--accent)"></span>Your projected net worth</span>
+          <span><span class="sw" style="background:var(--gold)"></span><span id="heroLegendBar">The next bar</span></span>
+        </div>
+        <div class="chartnote">Log scale (each gridline step is roughly a tripling). The bar is a moving target: catching it means out-growing it, not just reaching today’s number.</div>
+      </div>
+
+      <div class="layout">
+        <div class="forms">
+          <section class="card" id="secIncome">
+            <h2>1 · Income → savings</h2>
+            <p class="sub">Your income, what the tax man takes, and what you spend. What’s left — your annual savings — is the engine of the whole projection.</p>
+            <div class="frow">
+              <label for="incSalary">Base salary (cash)</label>
+              <input id="incSalary" type="text" class="money" inputmode="numeric" placeholder="$ / year" />
+            </div>
+            <div class="frow">
+              <label for="incBonus">Annual bonus (cash)</label>
+              <input id="incBonus" type="text" class="money" inputmode="numeric" placeholder="$ / year" />
+            </div>
+            <div class="frow frow-stock">
+              <label for="incStock">Stock compensation (annual value)</label>
+              <input id="incStockLabel" type="text" placeholder="Company / ticker (optional)" />
+              <input id="incStock" type="text" class="money" inputmode="numeric" placeholder="$ / year" />
+            </div>
+            <div id="otherIncomeRows"></div>
+            <button type="button" class="addbtn" data-add="otherincome">+ Add other income</button>
+            <div class="frow">
+              <label for="taxRate">Effective tax rate</label>
+              <div class="pctfield"><input id="taxRate" type="number" step="0.5" min="0" max="90" value="33" /><span>% of income</span></div>
+              <div class="hint">Your all-in rate — federal, state, payroll — best estimate.</div>
+            </div>
+            <div class="frow">
+              <label for="expenses">Annual expenses (everything you spend in a year)</label>
+              <input id="expenses" type="text" class="money" inputmode="numeric" placeholder="$ / year" />
+              <div class="hint">Housing, childcare, food, travel, everything. This is the number that decides how much you save.</div>
+            </div>
+            <div class="frow">
+              <label for="saveOverride">…or enter savings directly</label>
+              <input id="saveOverride" type="text" class="money" inputmode="numeric" placeholder="Optional — overrides the math above" />
+              <div class="hint">If filled, this figure is used for the projection instead of income − taxes − expenses.</div>
+            </div>
+
+            <div class="waterfall" id="waterfall">
+              <h3>Where a year of income goes</h3>
+              <div class="wf-row"><span class="wl">Income</span><div class="wf-track"><div class="wf-fill" id="wfInc" style="background:var(--accent);width:0%"></div></div><span class="wv mono" id="wfIncV">$0</span></div>
+              <div class="wf-row"><span class="wl">− Taxes</span><div class="wf-track"><div class="wf-fill" id="wfTax" style="background:var(--neg);width:0%"></div></div><span class="wv mono" id="wfTaxV">$0</span></div>
+              <div class="wf-row"><span class="wl">− Expenses</span><div class="wf-track"><div class="wf-fill" id="wfExp" style="background:var(--gold);width:0%"></div></div><span class="wv mono" id="wfExpV">$0</span></div>
+              <div class="wf-row wf-total"><span class="wl">= Annual savings</span><div class="wf-track"><div class="wf-fill" id="wfSav" style="background:var(--accent);width:0%"></div></div><span class="wv mono" id="wfSavV">$0</span></div>
+              <div class="wf-note" id="wfNote"></div>
+            </div>
+            <div class="sectotal"><span>Total income</span><b class="mono" id="incomeTotal">$0</b></div>
+          </section>
+
+          <section class="card" id="secCash">
+            <h2>2 · Cash &amp; other assets</h2>
+            <p class="sub">Cash is counted at face value and assumed to grow at 0%. Other assets (a business stake, valuables, anything not below) are treated as invested and grow at your return assumption.</p>
+            <div class="frow">
+              <label for="cashField">Cash holdings (checking, savings, money market)</label>
+              <input id="cashField" type="text" class="money" inputmode="numeric" placeholder="$" />
+            </div>
+            <div class="frow">
+              <label for="otherAssets">Other assets (optional)</label>
+              <input id="otherAssets" type="text" class="money" inputmode="numeric" placeholder="$" />
+            </div>
+            <div class="sectotal"><span>Total cash + other assets</span><b class="mono" id="cashTotal">$0</b></div>
+          </section>
+
+          <section class="card" id="secProps">
+            <h2>3 · Properties</h2>
+            <p class="sub">Homes, rentals, land — what each is worth today and what you still owe on it. Only the equity counts toward net worth, and in the projection the equity grows at your property-appreciation assumption (0% by default — conservative).</p>
+            <div id="propRows"></div>
+            <button type="button" class="addbtn" data-add="property">+ Add property</button>
+            <div class="sectotal"><span>Total property equity</span><b class="mono" id="propTotal">$0</b></div>
+          </section>
+
+          <section class="card" id="secAccts">
+            <h2>4 · Brokerage &amp; retirement accounts</h2>
+            <p class="sub">Add each account — brokerage, 401(k), IRA, HSA. Keep it rough with a single balance (“Total only”), or switch to “Detailed” and itemize every symbol; the account total then sums itself.</p>
+            <div id="acctRows"></div>
+            <button type="button" class="addbtn" data-add="account">+ Add account</button>
+            <div class="sectotal"><span>Total invested</span><b class="mono" id="acctTotal">$0</b></div>
+          </section>
+
+          <section class="card" id="secDebts">
+            <h2>5 · Other liabilities</h2>
+            <p class="sub">Debts not tied to a property above — car loans, credit cards, student loans. Held flat in the projection (no paydown schedule).</p>
+            <div id="debtRows"></div>
+            <button type="button" class="addbtn" data-add="debt">+ Add liability</button>
+            <div class="sectotal"><span>Total other liabilities</span><b class="mono" id="debtTotal">$0</b></div>
+          </section>
+
+          <section class="card" id="secAssump">
+            <h2>6 · Assumptions</h2>
+            <p class="sub">Each percentile bar grows at its own documented long-run rate (about 5.5%/yr — see “How this works”). The adjustment shifts every bar’s rate up or down together, if you think the coming decades will run hotter or cooler than 1989–2025 did.</p>
+            <div class="assumps">
+              <div class="assump">
+                <label for="aReturn">Return on invested assets</label>
+                <div class="field"><input id="aReturn" type="number" step="0.1" value="6" /><span>% / yr</span></div>
+                <div class="note">Applied to brokerage + other assets; your savings are added each year.</div>
+              </div>
+              <div class="assump">
+                <label for="aApprec">Property appreciation</label>
+                <div class="field"><input id="aApprec" type="number" step="0.1" value="0" /><span>% / yr</span></div>
+                <div class="note">Applied to property equity. 0% is the conservative default.</div>
+              </div>
+              <div class="assump">
+                <label for="aBarAdj">Bar growth adjustment</label>
+                <div class="field"><input id="aBarAdj" type="number" step="0.1" value="0" /><span>pts / yr</span></div>
+                <div class="note">0 = documented long-run rates. +1 makes every bar rise 1 pt/yr faster.</div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <aside class="results">
+          <div class="rcard" id="resMain">
+            <h2>Your standing</h2>
+            <div id="resEmpty" class="empty">Enter anything on the left — a salary, a bank balance, a home — and your percentile appears here.</div>
+            <div id="resBody" class="hidden">
+              <div class="bignum mono" id="resNW">$0</div>
+              <span class="pctbadge" id="resPct">—</span>
+              <div class="pctsub" id="resPctSub"></div>
+              <div class="statgrid">
+                <div><div class="k">Total assets</div><div class="v mono" id="resAssets">—</div></div>
+                <div><div class="k">Total debts</div><div class="v mono" id="resDebts">—</div></div>
+                <div><div class="k">Saved per year</div><div class="v mono" id="resSave">—</div></div>
+                <div><div class="k">Savings rate</div><div class="v mono" id="resRate">—</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rcard hidden" id="resComp">
+            <h2>What your net worth is made of</h2>
+            <div class="compbar" id="compBar"></div>
+            <div class="complist" id="compList"></div>
+          </div>
+
+          <div class="rcard hidden" id="resNext">
+            <h2>The next rung</h2>
+            <div class="nexttarget" id="nextName">—</div>
+            <div class="gapline" id="nextGap"></div>
+            <div class="yearsline" id="nextYears"></div>
+            <div style="margin-top:14px">
+              <table class="ladder">
+                <thead><tr><th>Rung</th><th class="r">Bar today</th><th class="r">Gap</th><th class="r">Years</th></tr></thead>
+                <tbody id="ladderBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="rcard hidden" id="resWhat">
+            <h2>What it would take</h2>
+            <div class="wtt">
+              <div class="bignum2 mono" id="wttNum">—</div>
+              <p id="wttText"></p>
+            </div>
+          </div>
+
+          <div class="rcard hidden" id="resLadder">
+            <h2>The ladder (today’s bars)</h2>
+            <div class="chartwrap" id="ladderChart"></div>
+            <div class="chartnote">Each dot is the net worth needed to enter that bracket, on a log scale. The line is you.</div>
+          </div>
+        </aside>
+      </div>
+
+      <footer>
+        <p><b>Thresholds: Federal Reserve Survey of Consumer Finances 2025 (via DQYDJ).</b> Full percentile table as tabulated from the SCF public microdata by <a href="https://dqydj.com/net-worth-percentiles/" target="_blank" rel="noopener">DQYDJ’s net worth percentile analysis</a>.</p>
+        <p><b>How this works.</b> The percentile bars are moving targets: in the simulation each bar rises at its documented long-run SCF rate — about 5.5%/yr for every rung from 1989 to 2025 (the 90th-percentile bar compounded at 5.52%/yr; the 95th and 99th at 5.59%/yr; the 93rd, 97th and 98th are assigned that same common pace, since they were only published in later surveys). Recent survey windows ran faster than the long run, which is what the bar-growth adjustment is for. Your percentile between published rungs is a log-linear interpolation — an estimate, not a measurement. The projection holds your income, savings, return, and appreciation constant, adds your savings to your invested assets each year, keeps liabilities flat, and ignores market swings and life changes. These are scenarios, not forecasts, and not financial advice. Your entries never leave this page — nothing is stored or sent anywhere.</p>
+      </footer>
+    </div>
+
+<script>
+"use strict";
+/* ---------- Percentile thresholds: Federal Reserve 2025 SCF (via DQYDJ) ---------- */
+var PCT = [
+[1,-71262],[2,-39680],[3,-26884],[4,-14494],[5,-8806],[6,-4142],[7,-1632],[8,-86],[9,29],[10,225],
+[11,720],[12,1328],[13,2166],[14,3740],[15,5052],[16,6420],[17,7734],[18,9246],[19,10862],[20,13216],
+[21,15454],[22,17504],[23,20932],[24,24620],[25,27786],[26,31970],[27,37986],[28,43003],[29,49397],[30,55384],
+[31,60678],[32,66704],[33,72136],[34,77222],[35,82258],[36,88503],[37,97319],[38,103802],[39,111049],[40,120570],
+[41,130010],[42,138610],[43,145804],[44,155538],[45,165090],[46,178466],[47,188120],[48,199026],[49,207402],[50,215916],
+[51,225586],[52,236220],[53,248582],[54,260332],[55,272680],[56,283202],[57,298134],[58,312562],[59,328324],[60,346360],
+[61,367666],[62,393094],[63,412390],[64,429810],[65,448456],[66,475970],[67,500328],[68,534796],[69,568682],[70,597046],
+[71,627620],[72,666884],[73,711838],[74,761250],[75,812492],[76,868740],[77,920960],[78,970608],[79,1031844],[80,1084972],
+[81,1153922],[82,1231286],[83,1302406],[84,1391057],[85,1502940],[86,1663620],[87,1847490],[88,2021180],[89,2325686],[90,2550306],
+[91,2820172],[92,3088600],[93,3448610],[94,4089546],[95,4907372],[96,5981288],[97,7422720],[98,10034008],[99,16463320],
+[99.5,22930532],[99.9,63821752]
+];
+/* Documented long-run bar growth (SCF thresholds, 1989–2025): 90th = 5.52%/yr;
+   95th & 99th = 5.59%/yr; every other rung uses the common 5.59% pace. */
+var BAR_BASE = 5.59, BAR_90 = 5.52;
+function barRatePct(rung, adjPts){
+  return (Math.abs(rung-90)<1e-9 ? BAR_90 : BAR_BASE) + adjPts;
+}
+var MILESTONES = [25,50,60,70,75,80,85,90,91,92,93,94,95,96,97,98,99,99.5,99.9];
+function thr(p){ for(var i=0;i<PCT.length;i++){ if(Math.abs(PCT[i][0]-p)<1e-9) return PCT[i][1]; } return null; }
+function percentileOf(nw){
+  if(nw <= PCT[0][1]) return PCT[0][0]*0.6;
+  if(nw >= PCT[PCT.length-1][1]) return 99.9;
+  for(var i=0;i<PCT.length-1;i++){
+    var p1=PCT[i][0], v1=PCT[i][1], p2=PCT[i+1][0], v2=PCT[i+1][1];
+    if(nw>=v1 && nw<=v2){
+      var f;
+      if(v1>0 && v2>0){ f=(Math.log(nw)-Math.log(v1))/(Math.log(v2)-Math.log(v1)); }
+      else { f=(nw-v1)/(v2-v1); }
+      return p1 + f*(p2-p1);
+    }
+  }
+  return 99.9;
+}
+function topLabel(p){
+  var top=100-p;
+  return "top ~"+(top>=10? Math.round(top) : (Math.round(top*10)/10))+"%";
+}
+function rungName(p){ return p>=99 ? ("Top "+(Math.round((100-p)*10)/10)+"%") : ("Top "+Math.round(100-p)+"%"); }
+
+/* ---------- formatting ---------- */
+function fmt(n){
+  var neg=n<0; n=Math.abs(Math.round(n));
+  var s=n.toString().replace(/\B(?=(\d{3})+(?!\d))/g,",");
+  return (neg?"-$":"$")+s;
+}
+function fmtShort(n){
+  var neg=n<0, a=Math.abs(n), out;
+  if(a>=1e6) out=(a/1e6).toFixed(a>=1e7?1:2).replace(/\.?0+$/,"")+"M";
+  else if(a>=1e3) out=Math.round(a/1e3)+"k";
+  else out=Math.round(a)+"";
+  return (neg?"-$":"$")+out;
+}
+function parseNum(el){
+  if(!el) return 0;
+  var v=(el.value||"").toString().replace(/[^0-9.\-]/g,"");
+  var n=parseFloat(v);
+  return isNaN(n)?0:n;
+}
+function hasVal(el){ return el && (el.value||"").toString().replace(/[^0-9.\-]/g,"")!=="" && !isNaN(parseFloat((el.value||"").toString().replace(/[^0-9.\-]/g,""))); }
+function esc(s){ return (s||"").toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function fmtYears(y){
+  if(y===null||y===undefined) return "not on path";
+  if(y<1) return "under a year";
+  return (Math.round(y*10)/10).toString().replace(/\.0$/,"")+" yrs";
+}
+
+/* ---------- row builders ---------- */
+function el(html){ var d=document.createElement("div"); d.innerHTML=html; return d.firstElementChild; }
+function otherIncomeRow(label,amount){
+  return el('<div class="row r-simple">'
+    +'<input type="text" class="s-label" placeholder="Other income (e.g. rental income, side business)" value="'+esc(label||"")+'" />'
+    +'<input type="text" class="s-amt money amt" inputmode="numeric" placeholder="$ / year" value="'+(amount||"")+'" />'
+    +'<button type="button" class="del" title="Remove" aria-label="Remove">×</button></div>');
+}
+function simpleRow(label,amount,ph){
+  return el('<div class="row r-simple">'
+    +'<input type="text" class="s-label" placeholder="'+esc(ph)+'" value="'+esc(label||"")+'" />'
+    +'<input type="text" class="s-amt money amt" inputmode="numeric" placeholder="$" value="'+(amount||"")+'" />'
+    +'<button type="button" class="del" title="Remove" aria-label="Remove">×</button></div>');
+}
+function propRow(name,value,loan){
+  return el('<div class="row r-prop">'
+    +'<input type="text" class="p-name" placeholder="Property name (e.g. Primary home, rental in Austin)" value="'+esc(name||"")+'" />'
+    +'<input type="text" class="p-val money amt" inputmode="numeric" placeholder="Value $" value="'+(value||"")+'" />'
+    +'<input type="text" class="p-loan money amt" inputmode="numeric" placeholder="Owed $" value="'+(loan||"")+'" />'
+    +'<button type="button" class="del" title="Remove" aria-label="Remove property">×</button>'
+    +'<div class="eq"></div></div>');
+}
+function holdingRow(sym,val){
+  return el('<div class="hrow">'
+    +'<input type="text" class="h-sym" placeholder="Symbol or fund (e.g. VOO, AAPL, BTC)" value="'+esc(sym||"")+'" />'
+    +'<input type="text" class="h-val money" inputmode="numeric" placeholder="$" value="'+(val||"")+'" />'
+    +'<button type="button" class="del" title="Remove holding" aria-label="Remove holding">×</button></div>');
+}
+function acctRow(name,type,total,mode,holdings){
+  var types=["Brokerage","401(k)","IRA","Roth IRA","HSA","529 / Education","Crypto","Pension / other"];
+  var sel=types.map(function(t){return '<option'+(t===type?" selected":"")+'>'+t+'</option>';}).join("");
+  var a=el('<div class="acct" data-mode="'+(mode||"simple")+'">'
+    +'<div class="row r-acct">'
+    +'<input type="text" class="a-name" placeholder="Account name (e.g. Robinhood, Fidelity 401k)" value="'+esc(name||"")+'" />'
+    +'<select class="a-type typ" aria-label="Account type">'+sel+'</select>'
+    +'<input type="text" class="a-total money amt" inputmode="numeric" placeholder="Balance $" value="'+(total||"")+'" />'
+    +'<button type="button" class="del" title="Remove account" aria-label="Remove account">×</button></div>'
+    +'<div class="modebar"><span class="lbl">Detail level</span>'
+    +'<button type="button" class="modebtn m-simple">Total only</button>'
+    +'<button type="button" class="modebtn m-detail">Detailed</button></div>'
+    +'<div class="holdings"></div>'
+    +'<button type="button" class="addbtn h-add" style="margin-top:8px">+ Add holding</button>'
+    +'<div class="acctsum"></div></div>');
+  var hwrap=a.querySelector(".holdings");
+  (holdings&&holdings.length?holdings:[["",""]]).forEach(function(h){ hwrap.appendChild(holdingRow(h[0],h[1])); });
+  syncAcctMode(a);
+  return a;
+}
+function syncAcctMode(a){
+  var mode=a.dataset.mode;
+  a.querySelector(".m-simple").classList.toggle("on",mode==="simple");
+  a.querySelector(".m-detail").classList.toggle("on",mode==="detail");
+  a.querySelector(".holdings").classList.toggle("hidden",mode!=="detail");
+  a.querySelector(".h-add").classList.toggle("hidden",mode!=="detail");
+  a.querySelector(".a-total").classList.toggle("hidden",mode!=="simple");
+}
+function acctValue(a){
+  if(a.dataset.mode==="detail"){
+    var s=0; a.querySelectorAll(".h-val").forEach(function(i){ s+=parseNum(i); });
+    return s;
+  }
+  return parseNum(a.querySelector(".a-total"));
+}
+
+/* ---------- seed rows ---------- */
+var $=function(id){ return document.getElementById(id); };
+$("propRows").appendChild(propRow("","",""));
+$("acctRows").appendChild(acctRow("","Brokerage","","simple",null));
+$("debtRows").appendChild(simpleRow("","","Debt (e.g. car loan, credit card)") );
+
+/* ---------- events ---------- */
+document.addEventListener("input",function(){ recalc(); });
+document.addEventListener("change",function(){ recalc(); });
+document.addEventListener("focusout",function(e){
+  var t=e.target;
+  if(t.classList && t.classList.contains("money")){
+    var n=parseNum(t);
+    if(t.value.trim()!=="") t.value=fmt(n).replace("$","");
+  }
+});
+document.addEventListener("click",function(e){
+  var t=e.target;
+  if(t.classList.contains("del")){
+    var row=t.closest(".row,.hrow,.acct");
+    if(row){
+      var parent=row.parentElement;
+      row.remove();
+      if(parent && parent.id==="propRows" && !parent.children.length) parent.appendChild(propRow("","",""));
+      if(parent && parent.id==="debtRows" && !parent.children.length) parent.appendChild(simpleRow("","","Debt (e.g. car loan, credit card)"));
+      if(row.classList.contains("hrow")){
+        var hw=row.parentElement;
+        if(hw && !hw.children.length) hw.appendChild(holdingRow("",""));
+      }
+      recalc();
+    }
+    return;
+  }
+  if(t.classList.contains("addbtn") && t.dataset.add){
+    var kind=t.dataset.add;
+    if(kind==="otherincome") $("otherIncomeRows").appendChild(otherIncomeRow("",""));
+    if(kind==="property") $("propRows").appendChild(propRow("","",""));
+    if(kind==="debt") $("debtRows").appendChild(simpleRow("","","Debt (e.g. car loan, credit card)"));
+    if(kind==="account") $("acctRows").appendChild(acctRow("","Brokerage","","simple",null));
+    recalc();
+    return;
+  }
+  if(t.classList.contains("h-add")){
+    t.closest(".acct").querySelector(".holdings").appendChild(holdingRow("",""));
+    recalc(); return;
+  }
+  if(t.classList.contains("modebtn")){
+    var ac=t.closest(".acct");
+    ac.dataset.mode=t.classList.contains("m-detail")?"detail":"simple";
+    syncAcctMode(ac); recalc(); return;
+  }
+});
+
+/* ---------- simulation (single source of truth for years + graph) ---------- */
+/* Buckets: invested (brokerage + other assets) grows at return, savings added yearly;
+   cash flat; property equity grows at appreciation; other liabilities flat. */
+function simulate(s, extraSave, years){
+  var inv=s.invested+s.otherAssets, eq=s.propEq, path=[s.nw];
+  for(var t=1;t<=years;t++){
+    inv=inv*(1+s.r)+(s.savings+extraSave);
+    eq=eq*(1+s.apprec);
+    path.push(inv+s.cash+eq-s.debts);
+  }
+  return path;
+}
+function crossingYears(path, thr0, barRate){
+  var prev=path[0]-thr0;
+  if(prev>=0) return 0;
+  for(var t=1;t<path.length;t++){
+    var bar=thr0*Math.pow(1+barRate,t);
+    var diff=path[t]-bar;
+    if(diff>=0){ return (t-1)+ prev/(prev-diff); }
+    prev=diff;
+  }
+  return null; /* never within the simulated horizon */
+}
+function extraSavingsForTargetYear(s, thr0, barRate, targetYears){
+  var barT=thr0*Math.pow(1+barRate,targetYears);
+  function nwAt(extra){ return simulate(s,extra,targetYears)[targetYears]; }
+  if(nwAt(0)>=barT) return 0;
+  var lo=0, hi=1000;
+  while(nwAt(hi)<barT && hi<5e7) hi*=2;
+  if(nwAt(hi)<barT) return null;
+  for(var i=0;i<50;i++){ var mid=(lo+hi)/2; if(nwAt(mid)>=barT) hi=mid; else lo=mid; }
+  return hi;
+}
+
+/* ---------- state ---------- */
+function readState(){
+  var income=parseNum($("incSalary"))+parseNum($("incBonus"))+parseNum($("incStock"));
+  document.querySelectorAll("#otherIncomeRows .row").forEach(function(row){ income+=parseNum(row.querySelector(".s-amt")); });
+  var taxRate=Math.min(90,Math.max(0,parseFloat($("taxRate").value)||0))/100;
+  var taxes=income*taxRate;
+  var expenses=parseNum($("expenses"));
+  var computedSavings=income-taxes-expenses;
+  var overrideOn=hasVal($("saveOverride"));
+  var savings=overrideOn? parseNum($("saveOverride")) : computedSavings;
+
+  var cash=parseNum($("cashField")), otherAssets=parseNum($("otherAssets"));
+  var propVal=0, propLoan=0;
+  document.querySelectorAll("#propRows .row").forEach(function(row){
+    var v=parseNum(row.querySelector(".p-val")), l=parseNum(row.querySelector(".p-loan"));
+    propVal+=v; propLoan+=l;
+    var eq=row.querySelector(".eq");
+    if(eq){ eq.innerHTML=(v||l)? ("Equity: <b>"+fmt(v-l)+"</b>") : ""; }
+  });
+  var invested=0;
+  document.querySelectorAll("#acctRows .acct").forEach(function(a){
+    var v=acctValue(a); invested+=v;
+    var sum=a.querySelector(".acctsum");
+    if(sum){
+      if(a.dataset.mode==="detail"){
+        var names=[];
+        a.querySelectorAll(".hrow").forEach(function(h){
+          var sv=parseNum(h.querySelector(".h-val")), sy=h.querySelector(".h-sym").value.trim();
+          if(sv>0 && v>0) names.push((sy||"Holding")+" "+Math.round(sv/v*100)+"%");
+        });
+        sum.innerHTML="Account total from holdings: <b>"+fmt(v)+"</b>"+(names.length?" · "+esc(names.join(" · ")):"");
+      } else sum.innerHTML="";
+    }
+  });
+  var debts=0;
+  document.querySelectorAll("#debtRows .row").forEach(function(row){ debts+=parseNum(row.querySelector(".s-amt")); });
+  var assets=cash+otherAssets+invested+propVal;
+  var liab=propLoan+debts;
+  return {
+    income:income, taxes:taxes, expenses:expenses, computedSavings:computedSavings,
+    overrideOn:overrideOn, savings:savings,
+    cash:cash, otherAssets:otherAssets, propVal:propVal, propLoan:propLoan, propEq:propVal-propLoan,
+    invested:invested, debts:debts, assets:assets, liab:liab, nw:assets-liab,
+    r:(parseFloat($("aReturn").value)||0)/100,
+    apprec:(parseFloat($("aApprec").value)||0)/100,
+    barAdj:(parseFloat($("aBarAdj").value)||0)
+  };
+}
+
+/* ---------- main recalc ---------- */
+function recalc(){
+  var s=readState();
+  $("incomeTotal").textContent=fmt(s.income);
+  $("cashTotal").textContent=fmt(s.cash+s.otherAssets);
+  $("propTotal").textContent=fmt(s.propEq);
+  $("acctTotal").textContent=fmt(s.invested);
+  $("debtTotal").textContent="−"+fmt(s.debts).replace("-","");
+
+  /* waterfall */
+  var base=Math.max(s.income, s.taxes+s.expenses, 1);
+  function wbar(id,vid,val,color){
+    var f=$(id); f.style.width=Math.max(0,Math.min(100,Math.abs(val)/base*100))+"%";
+    f.style.background=val<0? "var(--neg)" : color;
+    $(vid).textContent=fmt(val);
+  }
+  wbar("wfInc","wfIncV",s.income,"var(--accent)");
+  wbar("wfTax","wfTaxV",-s.taxes,"var(--neg)");
+  wbar("wfExp","wfExpV",-s.expenses,"var(--gold)");
+  wbar("wfSav","wfSavV",s.savings,"var(--accent)");
+  $("wfNote").textContent = s.overrideOn
+    ? "Using your manually entered savings of "+fmt(s.savings)+" for the projection (the flow above computes "+fmt(s.computedSavings)+")."
+    : (s.income>0 ? "Savings = "+fmt(s.income)+" income − "+fmt(s.taxes)+" taxes − "+fmt(s.expenses)+" expenses. This is what gets invested each year in the projection." : "");
+
+  var hasAny=(s.assets>0||s.liab>0||s.income>0);
+  $("stripNW").textContent=hasAny? fmt(s.nw) : "—";
+  if(!hasAny){
+    $("stripPct").textContent="—"; $("stripNext").textContent="—"; $("stripYears").textContent="—";
+    $("resEmpty").classList.remove("hidden"); $("resBody").classList.add("hidden");
+    ["resComp","resNext","resWhat","resLadder"].forEach(function(id){ $(id).classList.add("hidden"); });
+    $("heroVerdict").innerHTML='<span class="empty">Enter your numbers below and the race appears here.</span>';
+    $("heroChart").innerHTML="";
+    return;
+  }
+  $("resEmpty").classList.add("hidden"); $("resBody").classList.remove("hidden");
+  ["resComp","resNext","resWhat","resLadder"].forEach(function(id){ $(id).classList.remove("hidden"); });
+
+  var p=percentileOf(s.nw);
+  var pctTxt="≈ "+(p>=99.9? "99.9" : (Math.round(p*10)/10))+"th percentile — "+topLabel(p);
+  $("resNW").textContent=fmt(s.nw);
+  $("resPct").textContent=pctTxt;
+  $("resPctSub").textContent = s.nw<0
+    ? "Debts currently exceed assets — the climb starts with the first rung below. (Percentile is a log-linear estimate between published 2025 SCF rungs.)"
+    : "Estimate: log-linear interpolation between the published 2025 SCF rungs. Your household is wealthier than about "+(Math.round(p*10)/10)+" of every 100 U.S. households."+(p>=99? " Above the 99th rung the survey can only say “top 1%+” — the next target below is the highest published rung." : "");
+  $("resAssets").textContent=fmt(s.assets);
+  $("resDebts").textContent=fmt(s.liab);
+  $("resSave").textContent=fmt(s.savings)+"/yr";
+  $("resRate").textContent=s.income>0? Math.round(s.savings/s.income*100)+"%" : "—";
+  $("stripPct").innerHTML=esc(pctTxt.split(" — ")[0].replace("≈ ",""))+' <small>'+esc(topLabel(p))+'</small>';
+
+  /* composition */
+  var parts=[
+    {name:"Cash", val:s.cash, color:"#3e7cb1"},
+    {name:"Other assets", val:s.otherAssets, color:"#7a9e43"},
+    {name:"Investments", val:s.invested, color:"#0b6b4a"},
+    {name:"Property equity", val:Math.max(s.propEq,0), color:"#a86f0d"}
+  ];
+  var totParts=parts.reduce(function(a,b){ return a+Math.max(b.val,0); },0);
+  var barHtml="", listHtml="";
+  parts.forEach(function(pt){
+    var w=totParts>0? Math.max(pt.val,0)/totParts*100 : 0;
+    if(w>0) barHtml+='<div style="width:'+w+'%;background:'+pt.color+'"></div>';
+    if(pt.val!==0) listHtml+='<div class="ci"><span class="dot" style="background:'+pt.color+'"></span>'+esc(pt.name)+'<b class="mono">'+fmt(pt.val)+'</b></div>';
+  });
+  if(s.propEq<0) listHtml+='<div class="ci"><span class="dot" style="background:#b03527"></span>Property equity (underwater)<b class="mono">'+fmt(s.propEq)+'</b></div>';
+  if(s.liab>0) listHtml+='<div class="ci"><span class="dot" style="background:#b03527"></span>Total debts<b class="mono">−'+fmt(s.liab).replace("-","")+'</b></div>';
+  $("compBar").innerHTML=barHtml;
+  $("compList").innerHTML=listHtml;
+
+  /* milestones + the one simulation everything reads from */
+  var path=simulate(s,0,80);
+  var upcoming=MILESTONES.filter(function(m){ return thr(m)>s.nw; });
+  var ladderRows=upcoming.slice(0,5).map(function(m){
+    var t=thr(m), rate=barRatePct(m,s.barAdj)/100;
+    return {m:m, t:t, gap:t-s.nw, yrs:crossingYears(path,t,rate)};
+  });
+  var nextM=upcoming.length? upcoming[0] : null;
+
+  if(!nextM){
+    $("nextName").textContent="Top 0.1%";
+    $("nextGap").textContent="You are above every published threshold in the 2025 SCF table — "+fmt(s.nw-thr(99.9))+" above the top rung ("+fmt(thr(99.9))+").";
+    $("nextYears").innerHTML="There is no next rung on this ladder.";
+    $("stripNext").textContent="—"; $("stripYears").textContent="—";
+    $("ladderBody").innerHTML="";
+    $("wttNum").textContent="—";
+    $("wttText").textContent="No higher published rung to chase.";
+    $("heroVerdict").innerHTML='You are above the highest published rung — <span class="good">top 0.1%</span>.';
+    $("heroChart").innerHTML="";
+  } else {
+    var t0=thr(nextM), rate0=barRatePct(nextM,s.barAdj)/100, gap0=t0-s.nw;
+    var yrs0=crossingYears(path,t0,rate0);
+    var thisYear=new Date().getFullYear();
+    $("nextName").innerHTML=esc(rungName(nextM))+' <span>· '+fmt(t0)+'</span>';
+    $("nextGap").innerHTML="You need <b>"+fmt(gap0)+"</b> more than you have today — but the bar rises at <b>"+(Math.round(rate0*1000)/10)+"%/yr</b>, so the real target keeps moving.";
+    if(yrs0===null){
+      var blended = s.nw>0? ((s.invested+s.otherAssets)*s.r + s.propEq*s.apprec)/s.nw : s.r;
+      $("nextYears").innerHTML="<b>Not on the current path.</b> Within 80 years your projected net worth never catches a bar rising at "+(Math.round(rate0*1000)/10)+"%/yr: your money compounds at about "+(Math.round(blended*1000)/10)+"% blended (invested assets at "+(Math.round(s.r*1000)/10)+"%, property equity at "+(Math.round(s.apprec*1000)/10)+"%, cash at 0%), and saving "+fmt(s.savings)+"/yr adds too little to close a "+fmt(gap0)+" gap against that slope. The lever is the savings figure — see “What it would take.”";
+      $("stripYears").innerHTML='<small>not on path</small>';
+    } else {
+      var barThen=t0*Math.pow(1+rate0,yrs0);
+      $("nextYears").innerHTML="At your current pace you cross in about <b>"+fmtYears(yrs0)+"</b> (around "+Math.floor(thisYear+yrs0)+"), when the bar itself will have climbed to roughly <b>"+fmt(barThen)+"</b>.";
+      $("stripYears").textContent=fmtYears(yrs0);
+    }
+    $("stripNext").innerHTML=esc(rungName(nextM))+' <small>'+fmtShort(t0)+'</small>';
+    $("ladderBody").innerHTML=ladderRows.map(function(rw){
+      return "<tr><td><b>"+esc(rungName(rw.m))+"</b></td><td class='r mono'>"+fmt(rw.t)+"</td><td class='r mono'>"+fmt(rw.gap)+"</td><td class='r mono'>"+(rw.yrs===null?"—":fmtYears(rw.yrs))+"</td></tr>";
+    }).join("");
+
+    var extra10=extraSavingsForTargetYear(s,t0,rate0,10);
+    if(extra10===null){
+      $("wttNum").textContent="—";
+      $("wttText").textContent="No plausible savings figure reaches "+rungName(nextM)+" within 10 years from here.";
+    } else if(extra10<=0){
+      $("wttNum").textContent="$0 extra";
+      $("wttText").textContent="You are already on pace to reach "+rungName(nextM)+" within 10 years at your current savings — no extra saving needed.";
+    } else {
+      $("wttNum").textContent="+"+fmt(extra10)+"/yr";
+      $("wttText").textContent="Save this much <i>more</i> each year (on top of your current "+fmt(s.savings)+"/yr) and you reach "+rungName(nextM)+" in exactly 10 years, around "+(thisYear+10)+", even with the bar rising at "+(Math.round(rate0*1000)/10)+"%/yr.";
+    }
+    drawHero(s,path,nextM,t0,rate0,yrs0);
+  }
+  drawLadder(s);
+}
+
+/* ---------- hero chart: projected NW vs the next bar ---------- */
+function drawHero(s,path,nextM,t0,rate0,yrs0){
+  var box=$("heroChart");
+  $("heroLegendBar").textContent="The "+rungName(nextM)+" bar ("+fmt(t0)+" today, rising "+(Math.round(rate0*1000)/10)+"%/yr)";
+  var thisYear=new Date().getFullYear();
+  if(yrs0!==null){
+    $("heroVerdict").innerHTML='You reach <span class="good">'+esc(rungName(nextM))+'</span> in about <span class="good">'+fmtYears(yrs0)+'</span> — around <span class="good">'+Math.floor(thisYear+yrs0)+'</span> — if you keep saving '+fmt(s.savings)+' a year.';
+  } else {
+    $("heroVerdict").innerHTML='On the current path the '+esc(rungName(nextM))+' bar <span class="bad">does not cross</span> — it rises at '+(Math.round(rate0*1000)/10)+'%/yr and pulls away. Raising your annual savings is what bends your line up.';
+  }
+  if(s.nw<=0){
+    box.innerHTML='<p class="empty">The race chart draws once net worth is positive — right now debts exceed assets, so the first goal is getting above zero.</p>';
+    return;
+  }
+  var H = (yrs0!==null && yrs0<=50)? Math.min(50,Math.ceil(yrs0)+3) : 50;
+  var you=[], bar=[];
+  for(var t=0;t<=H;t++){ you.push(path[t]); bar.push(t0*Math.pow(1+rate0,t)); }
+  var lo=Math.min(s.nw,t0)*0.85, hi=Math.max(you[H],bar[H])*1.08;
+  var llo=Math.log10(Math.max(lo,1)), lhi=Math.log10(Math.max(hi,10));
+  var W=720,Hg=300,pl=14,pr=110,pt=16,pb=26;
+  function X(t){ return pl+(t/H)*(W-pl-pr); }
+  function Y(v){ return pt+(1-(Math.log10(Math.max(v,1))-llo)/(lhi-llo))*(Hg-pt-pb); }
+  var ticks=[1e4,3e4,1e5,3e5,1e6,3e6,1e7,3e7,1e8,3e8,1e9].filter(function(v){ return v>=Math.pow(10,llo)&&v<=Math.pow(10,lhi); });
+  var svg='<svg viewBox="0 0 '+W+' '+Hg+'" role="img" aria-label="Projected net worth versus the next percentile bar, year by year">';
+  ticks.forEach(function(v){
+    svg+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="var(--line)" stroke-width="1"/>'
+      +'<text x="'+(pl+2)+'" y="'+(Y(v)-4)+'" font-size="11" fill="var(--faint)" font-family="IBM Plex Mono,monospace">'+fmtShort(v)+'</text>';
+  });
+  var step=H>30?10:5;
+  for(var xt=0;xt<=H;xt+=step){
+    var anch = xt===0? "start" : (xt===H? "end" : "middle");
+    svg+='<text x="'+X(xt)+'" y="'+(Hg-6)+'" font-size="11" fill="var(--faint)" text-anchor="'+anch+'">'+(thisYear+xt)+'</text>';
+  }
+  function pth(arr){ return arr.map(function(v,i){ return (i?"L":"M")+X(i).toFixed(1)+" "+Y(v).toFixed(1); }).join(" "); }
+  svg+='<path d="'+pth(bar)+'" fill="none" stroke="var(--gold)" stroke-width="3"/>';
+  svg+='<path d="'+pth(you)+'" fill="none" stroke="var(--accent)" stroke-width="3"/>';
+  if(yrs0!==null && yrs0<=H){
+    var cx=X(yrs0), cy=Y(t0*Math.pow(1+rate0,yrs0));
+    svg+='<circle cx="'+cx+'" cy="'+cy+'" r="6" fill="var(--panel)" stroke="var(--ink)" stroke-width="2.5"/>';
+    var cyy = cy<44? cy+24 : cy-12;
+    if(cx>W-320){
+      svg+='<text x="'+(cx-12)+'" y="'+cyy+'" font-size="13" font-weight="800" fill="var(--ink)" text-anchor="end">crossing · '+fmtYears(yrs0)+' · '+(Math.floor(thisYear+yrs0))+'</text>';
+    } else {
+      svg+='<text x="'+(cx+10)+'" y="'+cyy+'" font-size="13" font-weight="800" fill="var(--ink)">crossing · '+fmtYears(yrs0)+' · '+(Math.floor(thisYear+yrs0))+'</text>';
+    }
+  }
+  if(yrs0!==null && yrs0>H){
+    svg+='<text x="'+(W-pr)+'" y="'+(pt+4)+'" font-size="12" font-weight="700" fill="var(--ink)" text-anchor="end">crossing at '+fmtYears(yrs0)+' is beyond this 50-yr chart</text>';
+  }
+  if(yrs0===null){
+    svg+='<text x="'+(W-pr)+'" y="'+(pt+4)+'" font-size="12.5" font-weight="700" fill="var(--neg)" text-anchor="end">does not cross on the current path</text>';
+  }
+  var yYou=Y(you[H]), yBar=Y(bar[H]);
+  if(Math.abs(yYou-yBar)<20){
+    if(yYou<=yBar){ yYou-=11; yBar+=13; } else { yBar-=11; yYou+=13; }
+  }
+  svg+='<text x="'+(W-pr+8)+'" y="'+(yYou+4)+'" font-size="12.5" font-weight="700" fill="var(--accent)">you '+fmtShort(you[H])+'</text>';
+  svg+='<text x="'+(W-pr+8)+'" y="'+(yBar+4)+'" font-size="12.5" font-weight="700" fill="var(--gold)">bar '+fmtShort(bar[H])+'</text>';
+  svg+="</svg>";
+  box.innerHTML=svg;
+}
+
+/* ---------- ladder chart ---------- */
+function drawLadder(s){
+  var box=$("ladderChart");
+  var marks=[50,75,90,95,99];
+  var W=360,H=118,pl=10,pr=10,pt=16,pb=30;
+  var llo=Math.log10(1e4), lhi=Math.log10(1e8);
+  function X(v){ var lv=Math.log10(Math.min(Math.max(v,1e4),1e8)); return pl+(lv-llo)/(lhi-llo)*(W-pl-pr); }
+  var axisY=H-pb;
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Percentile ladder on a log scale">';
+  svg+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+axisY+'" y2="'+axisY+'" stroke="var(--line-strong)" stroke-width="1.5"/>';
+  [1e4,1e5,1e6,1e7,1e8].forEach(function(v){
+    svg+='<line x1="'+X(v)+'" x2="'+X(v)+'" y1="'+(axisY-4)+'" y2="'+(axisY+4)+'" stroke="var(--line-strong)"/>'
+      +'<text x="'+X(v)+'" y="'+(H-8)+'" font-size="9.5" fill="var(--faint)" text-anchor="middle" font-family="IBM Plex Mono,monospace">'+fmtShort(v)+'</text>';
+  });
+  marks.forEach(function(m,i){
+    var v=thr(m), x=X(v), ly=i%2? axisY-34 : axisY-52;
+    svg+='<line x1="'+x+'" x2="'+x+'" y1="'+(axisY-5)+'" y2="'+(ly+10)+'" stroke="var(--line-strong)" stroke-dasharray="2 2"/>'
+      +'<circle cx="'+x+'" cy="'+axisY+'" r="4" fill="var(--gold)"/>'
+      +'<text x="'+x+'" y="'+ly+'" font-size="10" font-weight="700" fill="var(--ink)" text-anchor="middle">'+esc(rungName(m))+'</text>'
+      +'<text x="'+x+'" y="'+(ly+11)+'" font-size="9" fill="var(--muted)" text-anchor="middle" font-family="IBM Plex Mono,monospace">'+fmtShort(v)+'</text>';
+  });
+  if(s.nw>0){
+    var yx=X(s.nw);
+    svg+='<line x1="'+yx+'" x2="'+yx+'" y1="'+pt+'" y2="'+axisY+'" stroke="var(--accent)" stroke-width="2.5"/>'
+      +'<text x="'+yx+'" y="'+(pt-3)+'" font-size="10.5" font-weight="800" fill="var(--accent)" text-anchor="middle">YOU · '+fmtShort(s.nw)+'</text>';
+  }
+  svg+="</svg>";
+  box.innerHTML=svg;
+}
+
+/* ---------- sample / clear ---------- */
+function setRows(id,rows){ var c=$(id); c.innerHTML=""; rows.forEach(function(r){ c.appendChild(r); }); }
+function fmtField(elm,val){ elm.value=val; elm.dispatchEvent(new Event("focusout",{bubbles:true})); }
+$("btnSample").addEventListener("click",function(){
+  fmtField($("incSalary"),"285000");
+  fmtField($("incBonus"),"45000");
+  $("incStockLabel").value="ACME — employer RSUs";
+  fmtField($("incStock"),"92000");
+  setRows("otherIncomeRows",[]);
+  $("taxRate").value="33";
+  fmtField($("expenses"),"238000");
+  $("saveOverride").value="";
+  fmtField($("cashField"),"82500");
+  $("otherAssets").value="";
+  setRows("propRows",[
+    propRow("Primary home","1185000","642000"),
+    propRow("Rental condo","865000","598000")
+  ]);
+  setRows("acctRows",[
+    acctRow("Fidelity 401(k)","401(k)","","detail",[["Total US market fund","412000"],["Intl index","88000"]]),
+    acctRow("Brokerage","Brokerage","","detail",[["VOO","388000"],["GOOGL","1210000"],["AAPL","704000"],["Cash sweep","31000"]]),
+    acctRow("Roth IRA","Roth IRA","96500","simple",null)
+  ]);
+  setRows("debtRows",[
+    simpleRow("Car loan","27400","Debt (e.g. car loan, credit card)"),
+    simpleRow("Credit cards","5900","Debt (e.g. car loan, credit card)")
+  ]);
+  document.querySelectorAll(".money").forEach(function(m){ if(m.value.trim()!=="") m.value=fmt(parseNum(m)).replace("$",""); });
+  recalc();
+  window.scrollTo({top:0,behavior:"smooth"});
+});
+$("btnClear").addEventListener("click",function(){
+  ["incSalary","incBonus","incStock","incStockLabel","expenses","saveOverride","cashField","otherAssets"].forEach(function(id){ $(id).value=""; });
+  $("taxRate").value="33";
+  setRows("otherIncomeRows",[]);
+  setRows("propRows",[propRow("","","")]);
+  setRows("acctRows",[acctRow("","Brokerage","","simple",null)]);
+  setRows("debtRows",[simpleRow("","","Debt (e.g. car loan, credit card)")]);
+  recalc();
+});
+
+recalc();
+</script>
+  </body>
+</html>
