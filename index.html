@@ -265,6 +265,7 @@
       .ret-tablewrap{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:10px}
       .ret-tablewrap table.odds th{position:sticky;top:0;background:var(--panel);padding-top:8px}
       details.retdetails summary{cursor:pointer;font-weight:700;font-size:14.5px;padding:4px 0}
+      #tab-retirement .assumps.c1{grid-template-columns:1fr}
       #tab-retirement .assumps.c2{grid-template-columns:1fr 1fr}
       #tab-retirement .assumps.c3{grid-template-columns:repeat(3,1fr)}
       @media (min-width:921px){#tab-retirement .assumps.c2,#tab-retirement .assumps.c3{grid-template-columns:1fr}}
@@ -590,6 +591,16 @@
 
         <div class="mc-grid">
           <div>
+            <section class="card" id="retAgeCard" style="border-color:var(--accent)">
+              <h2>Start here · Your current age</h2>
+              <p class="sub">This one number anchors the whole tab: it sets the age your money has to last to, and <b>when Social Security starts</b> — your claiming age in §4 is counted from it.</p>
+              <div class="assump">
+                <label for="retAge">Your current age</label>
+                <div class="field"><input id="retAge" type="number" min="18" max="90" step="1" placeholder="39" /><span>yrs</span></div>
+              </div>
+              <p class="mc-note" id="retAgeSummary" style="margin-bottom:0">Enter your age to pin Social Security to your claiming age.</p>
+            </section>
+
             <section class="card">
               <h2>1 · When &amp; spending</h2>
               <p class="sub">Uses your Tab 1 inputs live — change anything there and this tab follows.</p>
@@ -598,12 +609,7 @@
                 <input id="retYears" type="range" min="0" max="30" step="1" value="10" />
                 <div class="note">0 = retire today. While you keep working, your Tab 1 savings are added every year.</div>
               </div>
-              <div class="assumps c2">
-                <div class="assump">
-                  <label for="retAge">Your current age</label>
-                  <div class="field"><input id="retAge" type="number" min="18" max="90" step="1" placeholder="39" /><span>yrs</span></div>
-                  <div class="note">Needed for “lasts until age …” and Social Security timing. Tab 1 has no age — it's only asked here.</div>
-                </div>
+              <div class="assumps c1">
                 <div class="assump">
                   <label for="retExpOverride">Retirement spending / yr</label>
                   <div class="field"><input id="retExpOverride" type="text" class="money" inputmode="numeric" placeholder="Tab 1" style="width:7.5em;text-align:right" /><span>$/yr today</span></div>
@@ -729,6 +735,7 @@
                 <summary>Year by year</summary>
                 <p class="sub" style="margin-top:8px">Every retirement year: what you started with, what it earned, what came in, what you spent, what's left.</p>
                 <div class="ret-tablewrap"><div id="retYearTable"><p class="empty" style="padding:10px">No data yet.</p></div></div>
+                <p class="mc-note" id="retIncomeNote"></p>
               </details>
               <p class="mc-note"><b>Honesty notes:</b> this is one steady path, not a forecast — returns are the same every year (Tab 2 shows what varying returns do to the climb; a retirement Monte Carlo would be the next step). No tax on withdrawals, no healthcare-cost spike, mortgages held flat exactly as in Tab 1, and selling a property is modelled with no sale costs or tax. The Social Security estimate uses the 2026 SSA formula (bend points $1,286 / $7,749; wage base $184,500; full retirement age 67) on a level-earnings assumption — treat it as a ballpark and replace it with your SSA statement figure for anything serious. Nothing is stored or sent — everything runs client-side, matching Tabs 1 and 2.</p>
             </section>
@@ -1695,6 +1702,24 @@ function renderRetirement(s){
   }
   var run=computeRetirement(s,o);
   var thisYear=new Date().getFullYear();
+  /* age-at-top summary: what the age drives */
+  if(o.age!==null){
+    var ssStartYr=thisYear+o.ssStartT;
+    $("retAgeSummary").innerHTML="Age <b>"+o.age+"</b> → you retire in <b>"+(thisYear+o.R)+"</b> at <b>"+(o.age+o.R)+"</b>. Social Security at claiming age "+o.claimAge+" starts in <b>"+ssStartYr+"</b>"+(o.ssStartT===0? " (already at claiming age)" : " ("+o.ssStartT+(o.ssStartT===1?" year":" years")+" from now)")+" — every year before that is a bridge year with no benefit.";
+  } else {
+    $("retAgeSummary").innerHTML="No age entered — “runs out” is shown in years only, and <b>Social Security is assumed to start the year you retire</b> rather than at a claiming age. Enter your age to pin it properly.";
+  }
+  /* footnote: what "Income in" is made of */
+  var incParts=[];
+  if(o.ssMonthly>0){
+    var ssSrc=retSSMode==="est"? "estimated Social Security of "+fmt(o.ssOwnMonthly)+"/mo in today's dollars" : retSSMode==="manual"? "your Social Security of "+fmt(o.ssOwnMonthly)+"/mo in today's dollars" : "";
+    if(o.spouse>0) ssSrc+=" (plus spouse "+fmt(o.spouse)+"/mo)";
+    incParts.push(ssSrc+" starting in "+(thisYear+o.ssStartT)+(o.age===null? " — assumed to start at retirement because no age is entered above; enter your age to start it at your claiming age ("+o.claimAge+") instead" : " (claiming age "+o.claimAge+")")+", rising at your "+(Math.round(o.cola*1000)/10)+"% COLA");
+  }
+  if(o.otherMonthly>0) incParts.push("other income of "+fmt(o.otherMonthly)+"/mo in today's dollars starting in "+(thisYear+o.otherStartT)+", rising with inflation");
+  $("retIncomeNote").innerHTML = incParts.length
+    ? "<b>What “Income in” is:</b> "+incParts.join("; ")+". It offsets that year's spending, so the pool only funds the difference."
+    : "<b>What “Income in” is:</b> $0 in every year of this run — no Social Security or other income is being counted (see §4–§5 to add some). Every year of spending comes straight out of the pool.";
   /* buckets */
   function bucketTxt(today,atRet){ return fmt(today)+"<small>today · "+fmt(atRet)+" at retirement</small>"; }
   $("retBucketA").innerHTML=bucketTxt(s.invested+s.otherAssets+s.cash-s.debts, run.A);
