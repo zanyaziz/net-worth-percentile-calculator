@@ -1579,7 +1579,7 @@ function drawMCHist(sortedFinals,nextM,H,s){
 $("btnRunMC").addEventListener("click",runMonteCarlo);
 
 /* ---------- Tab 3: Retirement ---------- */
-var retHomeMode="keep", retSSMode="est";
+var retHomeMode="keep", retSSMode="est", retCompareHTML="", retYearHTML="";
 function retPctVal(id, fb){ var e=$(id); if(!e||e.value==="") return fb; var v=parseFloat(e.value); return isNaN(v)? fb : v/100; }
 function retIntVal(id, fb){ var e=$(id); if(!e||e.value==="") return fb; var v=parseInt(e.value,10); return isNaN(v)? fb : v; }
 function ssClaimFactor(claim){
@@ -1674,6 +1674,11 @@ function selectRetireYears(n){
   $("retYearsLabel").textContent=n+(n===1?" year":" years");
   if(typeof renderRetirement==="function") renderRetirement();
 }
+document.addEventListener("pointerdown",function(e){
+  if(e.pointerType && e.pointerType!=="mouse") return;
+  var pr=e.target && e.target.closest? e.target.closest("tr.retpickrow") : null;
+  if(pr) selectRetireYears(parseInt(pr.dataset.retpick,10));
+});
 document.addEventListener("keydown",function(e){
   if((e.key==="Enter"||e.key===" ") && e.target && e.target.classList && e.target.classList.contains("retpickrow")){
     e.preventDefault();
@@ -1804,14 +1809,14 @@ function renderRetirement(s){
     ch+="<tr class='retpickrow' tabindex='0' role='button' data-retpick='"+cr+"' title='Load retire in "+cr+" years into the whole tab'"+(cr===o.R? " style='background:var(--accent-soft)'":"")+"><td><b>"+cr+(cr===1?" yr":" yrs")+"</b>"+(cr===o.R? " \u00b7 selected":"")+"</td><td class='mono'>"+fmt(rr.poolAtRet)+"</td><td class='mono'>"+(rr.duration===null? "\u2014" : fmtYears(rr.duration))+"</td><td class='mono'>"+outTxt+"</td></tr>";
   });
   ch+="</tbody></table>";
-  $("retCompare").innerHTML=ch;
+  if(retCompareHTML!==ch){ retCompareHTML=ch; $("retCompare").innerHTML=ch; }
   /* year table */
   var yh='<table class="odds"><thead><tr><th>Year</th><th>Age</th><th>Start</th><th>Growth</th><th>Income in</th><th>Spending</th><th>Left</th></tr></thead><tbody>';
   run.rows.slice(0,80).forEach(function(rw){
     yh+="<tr><td><b>"+(thisYear+rw.t)+"</b>"+(rw.homeUsed>0? " <span class='homeflag'>home tapped</span>":"")+"</td><td class='mono'>"+(rw.age!==null? rw.age:"—")+"</td><td class='mono'>"+fmt(rw.start)+"</td><td class='mono'>"+fmt(rw.growth)+"</td><td class='mono'>"+fmt(rw.ss+rw.other)+"</td><td class='mono'>"+fmt(rw.spend)+"</td><td class='mono'>"+fmt(rw.end)+"</td></tr>";
   });
   yh+="</tbody></table>";
-  $("retYearTable").innerHTML=yh;
+  if(retYearHTML!==yh){ retYearHTML=yh; $("retYearTable").innerHTML=yh; }
   drawRetChart(run,o,s);
 }
 function drawRetChart(run,o,s){
