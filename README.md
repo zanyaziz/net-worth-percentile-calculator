@@ -17,7 +17,8 @@ page and your numbers are gone.
   A waterfall shows the flow: Income → −Taxes → −Expenses → = Annual Savings. You can
   also override the savings figure directly.
 - **Properties** — each with a current value and the liability (mortgage) against it;
-  equity is the difference.
+  equity is the difference. One property can be marked as your **primary home**,
+  which Tab 3 treats specially (below).
 - **Cash and other assets.**
 - **Brokerage / retirement accounts** — each account is either a single total or a
   detailed list of holdings (symbol + value) that sums automatically.
@@ -54,6 +55,26 @@ worth crosses the rising next bar, and the chart plots both lines so you can see
 crossing (or see the bar pull away, in which case the page says plainly: *not on the
 current path*). It also solves for the extra annual savings that would reach the next
 rung in exactly 10 years.
+
+## Tab 3 — Retirement: how long will it last?
+
+Pick how many years from now you'd like to retire. Tab 3 grows the same Tab 1
+balance sheet to that day (same savings, same return), then draws it down against
+your spending — inflated every year — less Social Security and any other income,
+until the money runs out, and reports the age and year that happens.
+
+The balance sheet is split into three buckets: **liquid money** (invested + cash −
+other debts, always counted), **other property equity** (counted by default —
+assumed sold at retirement), and **primary home equity** (excluded by default, so
+the headline answer is how long your money lasts *while you keep your home*). In
+Tab 3 you can switch the home on, either as a last resort (tapped only after the
+other money runs out) or as a sale at retirement.
+
+Social Security can be estimated in the page using the real SSA formula — 2026
+bend points ($1,286 / $7,749), the $184,500 wage base, full retirement age 67,
+and the standard early/delayed claiming factors — applied to your Tab 1 income,
+or entered directly from your SSA statement, or left out entirely. The estimate
+is a ballpark, labelled as one.
 
 These projections are scenarios, not forecasts, and this is not financial advice.
 

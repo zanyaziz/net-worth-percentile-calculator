@@ -244,6 +244,29 @@
       }
       .tab-panel{margin-top:0}
 
+      /* primary-home pill (Tab 1 property rows) */
+      .pillbtn{font:inherit;font-size:12.5px;font-weight:600;border:1px solid var(--line-strong);background:var(--panel);color:var(--muted);border-radius:999px;padding:5px 12px;cursor:pointer}
+      .pillbtn.on{background:var(--gold);border-color:var(--gold);color:#fff}
+      .r-prop .primaryline{grid-column:1/-1;margin-top:-2px}
+
+      /* retirement (Tab 3) */
+      .segrow{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}
+      .segbtn{border:1px solid var(--line-strong);background:var(--panel);color:var(--muted);font:inherit;font-size:13px;font-weight:600;border-radius:999px;padding:6px 13px;cursor:pointer}
+      .segbtn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+      .retbuckets{display:grid;gap:8px}
+      .retbucket{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border:1px solid var(--line);border-radius:11px;padding:10px 13px;background:var(--panel-2)}
+      .retbucket .bk{font-size:13.5px;font-weight:700}
+      .retbucket .bk small{display:block;font-weight:500;color:var(--muted);font-size:12.5px}
+      .retbucket .bv{font-size:16px;font-weight:800;text-align:right;white-space:nowrap}
+      .retbucket .bv small{display:block;font-weight:600;color:var(--muted);font-size:11.5px}
+      .retcheck{display:flex;gap:9px;align-items:flex-start;font-size:14px;font-weight:600;padding:8px 0;cursor:pointer}
+      .retcheck input{width:18px;height:18px;accent-color:var(--accent);margin-top:1px;flex:none}
+      .retcheck small{display:block;font-weight:500;color:var(--muted);font-size:12.5px}
+      .ret-tablewrap{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+      .ret-tablewrap table.odds th{position:sticky;top:0;background:var(--panel);padding-top:8px}
+      details.retdetails summary{cursor:pointer;font-weight:700;font-size:14.5px;padding:4px 0}
+      .homeflag{font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em}
+
       /* monte carlo */
       .mc-grid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:22px;align-items:start}
       @media (max-width:920px){.mc-grid{grid-template-columns:1fr}}
@@ -286,6 +309,7 @@
       <div class="tabs" role="tablist" aria-label="Calculator views">
         <button type="button" class="tabbtn" role="tab" id="tabBtnCalc" aria-selected="true" aria-controls="tab-calculator" data-tab="calculator">Tab 1 — Your percentile today<small>Where you stand &amp; years to next rung</small></button>
         <button type="button" class="tabbtn" role="tab" id="tabBtnMC" aria-selected="false" aria-controls="tab-montecarlo" data-tab="montecarlo">Tab 2 — Monte Carlo: your odds<small>2,000 simulated futures, not one path</small></button>
+        <button type="button" class="tabbtn" role="tab" id="tabBtnRet" aria-selected="false" aria-controls="tab-retirement" data-tab="retirement">Tab 3 — Retirement: how long will it last?<small>Stop working in X years — when does the money run out?</small></button>
       </div>
 
       <div class="strip" aria-live="polite">
@@ -379,10 +403,11 @@
 
           <section class="card" id="secProps">
             <h2>3 · Properties</h2>
-            <p class="sub">Homes, rentals, land — what each is worth today and what you still owe on it. Only the equity counts toward net worth, and in the projection the equity grows at your property-appreciation assumption (0% by default — conservative).</p>
+            <p class="sub">Homes, rentals, land — what each is worth today and what you still owe on it. Only the equity counts toward net worth, and in the projection the equity grows at your property-appreciation assumption (0% by default — conservative). Mark one property as your <b>primary home</b> — Tab 3 (Retirement) excludes it from the drawdown by default, so you can see how long your money lasts while you keep your home.</p>
             <div id="propRows"></div>
             <button type="button" class="addbtn" data-add="property">+ Add property</button>
             <div class="sectotal"><span>Total property equity</span><b class="mono" id="propTotal">$0</b></div>
+            <div class="sectotal" style="border:none;margin-top:2px;padding-top:0"><span>Primary home / other properties</span><b class="mono" id="propSplit" style="font-size:13.5px">—</b></div>
           </section>
 
           <section class="card" id="secAccts">
@@ -543,9 +568,172 @@
         </div>
       </div><!-- /tab-montecarlo -->
 
+      <div id="tab-retirement" class="tab-panel hidden" role="tabpanel" aria-labelledby="tabBtnRet">
+        <div class="herocard">
+          <h2>Retirement — how long will it last?</h2>
+          <p class="hero-sub">Pick how many years from now you'd like to stop working. This tab grows your <b>Tab 1 balance sheet</b> to that day — same savings, same return — then draws it down against your spending as it inflates, year by year, until the money runs out. Your <b>primary home is excluded by default</b>: the headline answer is how long your money lasts <i>while you keep your home</i>.</p>
+          <p class="hero-verdict" id="retVerdict"><span class="empty">Enter your numbers in Tab 1 (or load the sample), then set your retirement below.</span></p>
+          <div class="chartwrap" id="retChart"></div>
+          <div class="legend">
+            <span><span class="sw" style="background:var(--accent)"></span>Money you can spend (pool)</span>
+            <span><span class="sw" style="background:var(--gold)"></span>Primary home equity (when it's the last resort)</span>
+            <span><span class="sw" style="background:var(--faint)"></span>Retirement day</span>
+          </div>
+          <div class="chartnote">Linear scale — zero matters here. The pool climbs while you work and save, then draws down. Social Security and other income reduce each year's withdrawal once they start.</div>
+        </div>
+
+        <div class="mc-grid">
+          <div>
+            <section class="card">
+              <h2>1 · When &amp; spending</h2>
+              <p class="sub">Uses your Tab 1 inputs live — change anything there and this tab follows.</p>
+              <div class="assump" style="margin-bottom:14px">
+                <label for="retYears">Retire in — <span id="retYearsLabel" class="mono">10 years</span></label>
+                <input id="retYears" type="range" min="0" max="30" step="1" value="10" />
+                <div class="note">0 = retire today. While you keep working, your Tab 1 savings are added every year.</div>
+              </div>
+              <div class="assumps" style="grid-template-columns:1fr 1fr">
+                <div class="assump">
+                  <label for="retAge">Your current age</label>
+                  <div class="field"><input id="retAge" type="number" min="18" max="90" step="1" placeholder="39" /><span>yrs</span></div>
+                  <div class="note">Needed for “lasts until age …” and Social Security timing. Tab 1 has no age — it's only asked here.</div>
+                </div>
+                <div class="assump">
+                  <label for="retExpOverride">Retirement spending / yr</label>
+                  <div class="field"><input id="retExpOverride" type="text" class="money" inputmode="numeric" placeholder="Tab 1" style="width:7.5em;text-align:right" /><span>$/yr today</span></div>
+                  <div class="note">Blank = your Tab 1 annual expenses (<span id="retExpFromTab1" class="mono">—</span>). In today's dollars; inflation below carries it forward.</div>
+                </div>
+              </div>
+              <div class="sectotal"><span>Spending in your first retirement year</span><b class="mono" id="retFirstYearSpend">—</b></div>
+            </section>
+
+            <section class="card">
+              <h2>2 · Growth &amp; inflation</h2>
+              <p class="sub">Before retirement, your money grows at Tab 1's return (<span id="retPreReturnNote" class="mono">—</span>) with your savings added. After retirement it can grow at a different, usually more cautious, rate.</p>
+              <div class="assumps" style="grid-template-columns:1fr 1fr 1fr">
+                <div class="assump">
+                  <label for="retInfl">Inflation</label>
+                  <div class="field"><input id="retInfl" type="number" step="0.1" value="3" /><span>% / yr</span></div>
+                  <div class="note">Applied to your spending every year, before and after retirement.</div>
+                </div>
+                <div class="assump">
+                  <label for="retPostReturn">Return after retiring</label>
+                  <div class="field"><input id="retPostReturn" type="number" step="0.1" placeholder="Tab 1" /><span>% / yr</span></div>
+                  <div class="note">Blank = Tab 1's return on invested assets. Many people model a lower, safer figure here.</div>
+                </div>
+                <div class="assump">
+                  <label for="retCola">Social Security COLA</label>
+                  <div class="field"><input id="retCola" type="number" step="0.1" value="2.5" /><span>% / yr</span></div>
+                  <div class="note">Yearly cost-of-living rise in benefits once they start (2.8% for 2026).</div>
+                </div>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>3 · Your home</h2>
+              <p class="sub" id="retHomeSummary">—</p>
+              <div class="lbl">Use my primary home to fund retirement?</div>
+              <div class="segrow" id="retHomeSeg">
+                <button type="button" class="segbtn on" data-rethome="keep">No — keep my home</button>
+                <button type="button" class="segbtn" data-rethome="last">Yes — as a last resort</button>
+                <button type="button" class="segbtn" data-rethome="sell">Yes — sell when I retire</button>
+              </div>
+              <p class="mc-note" id="retHomeNote">Your home is excluded. The answer below is how long your money lasts while you keep living in it.</p>
+              <label class="retcheck"><input type="checkbox" id="retCountOther" checked /><span>Count other property equity<small>Rentals and other non-primary properties are assumed sold at retirement, proceeds invested at your post-retirement return. Turn this off if you'd keep them — and if you want the rent counted, enter it under Other income instead (counting both would double-count).</small></span></label>
+              <p class="mc-note hidden" id="retNoPrimaryNote"><b>No primary home is marked in Tab 1.</b> Mark one in Tab 1 §3 to exclude it here — until then, all property equity is counted above.</p>
+            </section>
+
+            <section class="card">
+              <h2>4 · Social Security</h2>
+              <p class="sub">A rough estimate, labelled as one — the real figure is on your statement at ssa.gov. Benefits start at your <b>claiming age, not at retirement</b>: retire early and there are bridge years with no benefit.</p>
+              <div class="segrow" id="retSSSeg">
+                <button type="button" class="segbtn on" data-retss="est">Estimate it for me</button>
+                <button type="button" class="segbtn" data-retss="manual">I know mine</button>
+                <button type="button" class="segbtn" data-retss="none">Don't count it</button>
+              </div>
+              <div class="assumps" style="grid-template-columns:1fr 1fr">
+                <div class="assump" id="retSSYearsWrap">
+                  <label for="retSSYearsWorked">Years already worked</label>
+                  <div class="field"><input id="retSSYearsWorked" type="number" min="0" max="50" step="1" placeholder="age − 22" /><span>yrs</span></div>
+                  <div class="note">Blank = age − 22. Past + future working years are averaged over the top 35, as SSA does.</div>
+                </div>
+                <div class="assump">
+                  <label for="retSSClaimAge">Claiming age</label>
+                  <div class="field"><input id="retSSClaimAge" type="number" min="62" max="70" step="1" value="67" /><span>yrs</span></div>
+                  <div class="note">62 = earliest (≈70% of the full benefit at 67); 70 = latest (≈124%).</div>
+                </div>
+                <div class="assump hidden" id="retSSManualWrap">
+                  <label for="retSSManual">My monthly benefit at claiming age</label>
+                  <div class="field"><input id="retSSManual" type="text" class="money" inputmode="numeric" placeholder="$ / mo" style="width:7.5em;text-align:right" /><span>$/mo</span></div>
+                  <div class="note">In today's dollars, from your SSA statement.</div>
+                </div>
+                <div class="assump">
+                  <label for="retSSSpouse">Spouse / partner benefit (optional)</label>
+                  <div class="field"><input id="retSSSpouse" type="text" class="money" inputmode="numeric" placeholder="$ / mo" style="width:7.5em;text-align:right" /><span>$/mo</span></div>
+                  <div class="note">If filled, starts the same year as yours, in today's dollars.</div>
+                </div>
+              </div>
+              <div class="sectotal"><span>Estimated benefit</span><b class="mono" id="retSSEst">—</b></div>
+              <p class="mc-note" id="retSSDetail"></p>
+            </section>
+
+            <section class="card">
+              <h2>5 · Other income in retirement (optional)</h2>
+              <p class="sub">A pension, rent from a property you're keeping, part-time work — anything that offsets spending.</p>
+              <div class="assumps" style="grid-template-columns:1fr 1fr">
+                <div class="assump">
+                  <label for="retOtherInc">Monthly income</label>
+                  <div class="field"><input id="retOtherInc" type="text" class="money" inputmode="numeric" placeholder="$ / mo" style="width:7.5em;text-align:right" /><span>$/mo today</span></div>
+                  <div class="note">In today's dollars; it rises with inflation once it starts.</div>
+                </div>
+                <div class="assump">
+                  <label for="retOtherIncStart">Starts in</label>
+                  <div class="field"><input id="retOtherIncStart" type="number" min="0" max="60" step="1" placeholder="at retirement" /><span>yrs</span></div>
+                  <div class="note">Years from now. Blank = when you retire.</div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div>
+            <section class="card">
+              <h2>What funds your retirement</h2>
+              <p class="sub">Your Tab 1 balance sheet in three buckets — today, and projected on retirement day. They always add back to your Tab 1 net worth; this tab only decides which buckets the retirement math may spend.</p>
+              <div class="retbuckets">
+                <div class="retbucket"><span class="bk">A · Liquid money<small>Invested + cash − other debts. Always counted.</small></span><span class="bv mono" id="retBucketA">—<small>today</small></span></div>
+                <div class="retbucket"><span class="bk">B · Other property equity<small>Non-primary properties. Counted if the switch in §3 is on.</small></span><span class="bv mono" id="retBucketB">—<small>today</small></span></div>
+                <div class="retbucket"><span class="bk">C · Primary home equity<small>Excluded by default — see §3.</small></span><span class="bv mono" id="retBucketC">—<small>today</small></span></div>
+              </div>
+              <div class="mc-stats" style="margin-top:16px">
+                <div class="mc-stat"><div class="k">Pool at retirement</div><div class="v mono" id="retPoolAtRet">—</div><div class="s" id="retPoolSub">—</div></div>
+                <div class="mc-stat"><div class="k">First-year spending</div><div class="v mono" id="retSpendStat">—</div><div class="s" id="retSpendSub">—</div></div>
+                <div class="mc-stat"><div class="k">Money runs out</div><div class="v mono" id="retRunsOut">—</div><div class="s" id="retRunsOutSub">—</div></div>
+              </div>
+              <p class="mc-note" id="retSSCover"></p>
+            </section>
+
+            <section class="card">
+              <h2>Retire sooner or later?</h2>
+              <p class="sub">The same plan, three retirement dates — the decision this tab exists for.</p>
+              <div id="retCompare"><p class="empty">Enter your numbers in Tab 1 to see the comparison.</p></div>
+            </section>
+
+            <section class="card">
+              <details class="retdetails">
+                <summary>Year by year</summary>
+                <p class="sub" style="margin-top:8px">Every retirement year: what you started with, what it earned, what came in, what you spent, what's left.</p>
+                <div class="ret-tablewrap"><div id="retYearTable"><p class="empty" style="padding:10px">No data yet.</p></div></div>
+              </details>
+              <p class="mc-note"><b>Honesty notes:</b> this is one steady path, not a forecast — returns are the same every year (Tab 2 shows what varying returns do to the climb; a retirement Monte Carlo would be the next step). No tax on withdrawals, no healthcare-cost spike, mortgages held flat exactly as in Tab 1, and selling a property is modelled with no sale costs or tax. The Social Security estimate uses the 2026 SSA formula (bend points $1,286 / $7,749; wage base $184,500; full retirement age 67) on a level-earnings assumption — treat it as a ballpark and replace it with your SSA statement figure for anything serious. Nothing is stored or sent — everything runs client-side, matching Tabs 1 and 2.</p>
+            </section>
+          </div>
+        </div>
+      </div><!-- /tab-retirement -->
+
+
       <footer>
         <p><b>Thresholds: Federal Reserve Survey of Consumer Finances 2025 (via DQYDJ).</b> Full percentile table as tabulated from the SCF public microdata by <a href="https://dqydj.com/net-worth-percentiles/" target="_blank" rel="noopener">DQYDJ’s net worth percentile analysis</a>.</p>
-        <p><b>How this works.</b> The percentile bars are moving targets: in the simulation each bar rises at its documented long-run SCF rate — about 5.5%/yr for every rung from 1989 to 2025 (the 90th-percentile bar compounded at 5.52%/yr; the 95th and 99th at 5.59%/yr; the 93rd, 97th and 98th are assigned that same common pace, since they were only published in later surveys). Recent survey windows ran faster than the long run, which is what the bar-growth adjustment is for. Your percentile between published rungs is a log-linear interpolation — an estimate, not a measurement. The Tab 1 projection holds your income, savings, return, and appreciation constant, adds your savings to your invested assets each year, keeps liabilities flat, and ignores market swings and life changes. Tab 2 (Monte Carlo) relaxes that last part: returns vary randomly each year around the same mean, so you see a distribution and odds instead of a single line. These are scenarios, not forecasts, and not financial advice. Your entries never leave this page — nothing is stored or sent anywhere.</p>
+        <p><b>How this works.</b> The percentile bars are moving targets: in the simulation each bar rises at its documented long-run SCF rate — about 5.5%/yr for every rung from 1989 to 2025 (the 90th-percentile bar compounded at 5.52%/yr; the 95th and 99th at 5.59%/yr; the 93rd, 97th and 98th are assigned that same common pace, since they were only published in later surveys). Recent survey windows ran faster than the long run, which is what the bar-growth adjustment is for. Your percentile between published rungs is a log-linear interpolation — an estimate, not a measurement. The Tab 1 projection holds your income, savings, return, and appreciation constant, adds your savings to your invested assets each year, keeps liabilities flat, and ignores market swings and life changes. Tab 2 (Monte Carlo) relaxes that last part: returns vary randomly each year around the same mean, so you see a distribution and odds instead of a single line. Tab 3 (Retirement) takes the Tab 1 projection to your chosen retirement year, then draws the pool down against inflation-rising spending, less Social Security (estimated with the 2026 SSA bend-point formula on capped, level earnings) and any other income, until it runs out; the primary home marked in §3 is excluded from that pool unless you choose to count it. These are scenarios, not forecasts, and not financial advice. Your entries never leave this page — nothing is stored or sent anywhere.</p>
       </footer>
     </div>
 
@@ -634,13 +822,19 @@ function simpleRow(label,amount,ph){
     +'<input type="text" class="s-amt money amt" inputmode="numeric" placeholder="$" value="'+(amount||"")+'" />'
     +'<button type="button" class="del" title="Remove" aria-label="Remove">×</button></div>');
 }
-function propRow(name,value,loan){
+function propRow(name,value,loan,primary){
   return el('<div class="row r-prop">'
     +'<input type="text" class="p-name" placeholder="Property name (e.g. Primary home, rental in Austin)" value="'+esc(name||"")+'" />'
     +'<input type="text" class="p-val money amt" inputmode="numeric" placeholder="Value $" value="'+(value||"")+'" />'
     +'<input type="text" class="p-loan money amt" inputmode="numeric" placeholder="Owed $" value="'+(loan||"")+'" />'
     +'<button type="button" class="del" title="Remove" aria-label="Remove property">×</button>'
+    +'<div class="primaryline"><button type="button" class="pillbtn p-primary'+(primary?" on":"")+'" aria-pressed="'+(primary?"true":"false")+'" title="Mark as your primary home — Tab 3 excludes it from the retirement drawdown by default">'+(primary?"★ Primary home":"☆ Mark as primary home")+'</button></div>'
     +'<div class="eq"></div></div>');
+}
+function syncPrimaryPill(btn){
+  var on=btn.classList.contains("on");
+  btn.setAttribute("aria-pressed", on?"true":"false");
+  btn.textContent=on? "\u2605 Primary home" : "\u2606 Mark as primary home";
 }
 function holdingRow(sym,val){
   return el('<div class="hrow">'
@@ -730,6 +924,24 @@ document.addEventListener("click",function(e){
     t.closest(".acct").querySelector(".holdings").appendChild(holdingRow("",""));
     recalc(); return;
   }
+  if(t.classList.contains("p-primary")){
+    var wasOn=t.classList.contains("on");
+    document.querySelectorAll("#propRows .p-primary").forEach(function(b){ b.classList.remove("on"); syncPrimaryPill(b); });
+    if(!wasOn){ t.classList.add("on"); syncPrimaryPill(t); }
+    recalc(); return;
+  }
+  if(t.classList.contains("segbtn") && t.dataset.rethome){
+    retHomeMode=t.dataset.rethome;
+    document.querySelectorAll("#retHomeSeg .segbtn").forEach(function(b){ b.classList.toggle("on", b===t); });
+    if(typeof renderRetirement==="function") renderRetirement();
+    return;
+  }
+  if(t.classList.contains("segbtn") && t.dataset.retss){
+    retSSMode=t.dataset.retss;
+    document.querySelectorAll("#retSSSeg .segbtn").forEach(function(b){ b.classList.toggle("on", b===t); });
+    if(typeof renderRetirement==="function") renderRetirement();
+    return;
+  }
   if(t.classList.contains("modebtn")){
     var ac=t.closest(".acct");
     ac.dataset.mode=t.classList.contains("m-detail")?"detail":"simple";
@@ -783,10 +995,16 @@ function readState(){
   var savings=overrideOn? parseNum($("saveOverride")) : computedSavings;
 
   var cash=parseNum($("cashField")), otherAssets=parseNum($("otherAssets"));
-  var propVal=0, propLoan=0;
+  var propVal=0, propLoan=0, primaryEq=0, primaryName="", hasPrimary=false;
   document.querySelectorAll("#propRows .row").forEach(function(row){
     var v=parseNum(row.querySelector(".p-val")), l=parseNum(row.querySelector(".p-loan"));
     propVal+=v; propLoan+=l;
+    var pill=row.querySelector(".p-primary");
+    if(pill && pill.classList.contains("on")){
+      hasPrimary=true; primaryEq+=(v-l);
+      var nm=row.querySelector(".p-name");
+      primaryName=(nm && nm.value.trim())? nm.value.trim() : "Primary home";
+    }
     var eq=row.querySelector(".eq");
     if(eq){ eq.innerHTML=(v||l)? ("Equity: <b>"+fmt(v-l)+"</b>") : ""; }
   });
@@ -813,6 +1031,7 @@ function readState(){
     income:income, taxes:taxes, expenses:expenses, computedSavings:computedSavings,
     overrideOn:overrideOn, savings:savings,
     cash:cash, otherAssets:otherAssets, propVal:propVal, propLoan:propLoan, propEq:propVal-propLoan,
+    primaryEq:primaryEq, otherPropEq:(propVal-propLoan)-primaryEq, hasPrimary:hasPrimary, primaryName:primaryName,
     invested:invested, debts:debts, assets:assets, liab:liab, nw:assets-liab,
     r:(parseFloat($("aReturn").value)||0)/100,
     apprec:(parseFloat($("aApprec").value)||0)/100,
@@ -826,6 +1045,7 @@ function recalc(){
   $("incomeTotal").textContent=fmt(s.income);
   $("cashTotal").textContent=fmt(s.cash+s.otherAssets);
   $("propTotal").textContent=fmt(s.propEq);
+  $("propSplit").textContent=s.hasPrimary? (fmt(s.primaryEq)+" / "+fmt(s.otherPropEq)) : "no primary marked";
   $("acctTotal").textContent=fmt(s.invested);
   $("debtTotal").textContent="−"+fmt(s.debts).replace("-","");
 
@@ -853,6 +1073,7 @@ function recalc(){
     $("heroVerdict").innerHTML='<span class="empty">Enter your numbers below and the race appears here.</span>';
     $("heroChart").innerHTML="";
     if(typeof syncMCStart==="function") syncMCStart(s);
+    if(typeof renderRetirement==="function") renderRetirement(s);
     return;
   }
   $("resEmpty").classList.add("hidden"); $("resBody").classList.remove("hidden");
@@ -944,6 +1165,7 @@ function recalc(){
   }
   drawLadder(s);
   if(typeof syncMCStart==="function") syncMCStart(s);
+  if(typeof renderRetirement==="function") renderRetirement(s);
 }
 
 /* ---------- hero chart: projected NW vs the next bar ---------- */
@@ -1054,8 +1276,8 @@ $("btnSample").addEventListener("click",function(){
   fmtField($("cashField"),"82500");
   $("otherAssets").value="";
   setRows("propRows",[
-    propRow("Primary home","1185000","642000"),
-    propRow("Rental condo","865000","598000")
+    propRow("Primary home","1185000","642000",true),
+    propRow("Rental condo","865000","598000",false)
   ]);
   setRows("acctRows",[
     acctRow("Fidelity 401(k)","401(k)","","detail",[["Total US market fund","412000"],["Intl index","88000"]]),
@@ -1083,11 +1305,13 @@ $("btnClear").addEventListener("click",function(){
 /* ---------- Tabs ---------- */
 var mcHasRun=false, mcDebounce=null;
 function switchTab(name){
-  var isMC = name==="montecarlo";
-  $("tab-calculator").classList.toggle("hidden", isMC);
+  var isMC = name==="montecarlo", isRet = name==="retirement";
+  $("tab-calculator").classList.toggle("hidden", isMC||isRet);
   $("tab-montecarlo").classList.toggle("hidden", !isMC);
-  $("tabBtnCalc").setAttribute("aria-selected", isMC?"false":"true");
+  $("tab-retirement").classList.toggle("hidden", !isRet);
+  $("tabBtnCalc").setAttribute("aria-selected", (!isMC&&!isRet)?"true":"false");
   $("tabBtnMC").setAttribute("aria-selected", isMC?"true":"false");
+  $("tabBtnRet").setAttribute("aria-selected", isRet?"true":"false");
   if(isMC){
     syncMCStart(readState());
     if(!mcHasRun){
@@ -1095,12 +1319,14 @@ function switchTab(name){
       if(s.assets>0||s.liab>0||s.income>0) runMonteCarlo();
     }
   }
+  if(isRet && typeof renderRetirement==="function") renderRetirement();
   window.scrollTo({top:0,behavior:"smooth"});
 }
 document.querySelectorAll(".tabbtn").forEach(function(b){
   b.addEventListener("click",function(){ switchTab(b.dataset.tab); });
 });
 $("mcVol").addEventListener("input",function(){ $("mcVolLabel").textContent=$("mcVol").value+"% / yr"; scheduleMCRerun(); });
+$("retYears").addEventListener("input",function(){ var n=parseInt($("retYears").value,10)||0; $("retYearsLabel").textContent=n+(n===1?" year":" years"); if(typeof renderRetirement==="function") renderRetirement(); });
 $("mcSims").addEventListener("change",function(){ scheduleMCRerun(); });
 function scheduleMCRerun(){
   if($("tab-montecarlo").classList.contains("hidden")) return;
@@ -1333,6 +1559,255 @@ function drawMCHist(sortedFinals,nextM,H,s){
   box.innerHTML=svg;
 }
 $("btnRunMC").addEventListener("click",runMonteCarlo);
+
+/* ---------- Tab 3: Retirement ---------- */
+var retHomeMode="keep", retSSMode="est";
+function retPctVal(id, fb){ var e=$(id); if(!e||e.value==="") return fb; var v=parseFloat(e.value); return isNaN(v)? fb : v/100; }
+function retIntVal(id, fb){ var e=$(id); if(!e||e.value==="") return fb; var v=parseInt(e.value,10); return isNaN(v)? fb : v; }
+function ssClaimFactor(claim){
+  var FRA=67;
+  if(claim<FRA){ var m=(FRA-claim)*12; var red=Math.min(m,36)*(5/9/100)+Math.max(0,m-36)*(5/12/100); return 1-red; }
+  return 1+Math.min((claim-FRA)*12,36)*(2/3/100);
+}
+function ssEstimate(s,R,claimAge,yearsWorked){
+  var capped=Math.min(Math.max(s.income,0),184500);
+  var counted=Math.min(35, Math.max(0,yearsWorked)+Math.max(0,R));
+  var aime=counted>0? capped*counted/35/12 : 0;
+  var pia=0.9*Math.min(aime,1286)+(aime>1286? 0.32*(Math.min(aime,7749)-1286):0)+(aime>7749? 0.15*(aime-7749):0);
+  var f=ssClaimFactor(claimAge);
+  return {monthly:pia*f, pia:pia, aime:aime, counted:counted, capped:capped, factor:f};
+}
+function buildRetOpts(s){
+  var R=Math.max(0,Math.min(30,retIntVal("retYears",10)));
+  var ageRaw=$("retAge").value; var age=(ageRaw===""||isNaN(parseInt(ageRaw,10)))? null : Math.max(18,Math.min(90,parseInt(ageRaw,10)));
+  var expToday=hasVal($("retExpOverride"))? parseNum($("retExpOverride")) : s.expenses;
+  var infl=retPctVal("retInfl",0.03);
+  var postR=retPctVal("retPostReturn", s.r);
+  var cola=retPctVal("retCola",0.025);
+  var claimAge=Math.max(62,Math.min(70,retIntVal("retSSClaimAge",67)));
+  var yearsWorked=hasVal($("retSSYearsWorked"))? Math.max(0,parseInt($("retSSYearsWorked").value,10)||0) : (age!==null? Math.max(0,age-22) : 25);
+  var est=ssEstimate(s,R,claimAge,yearsWorked);
+  var ssMonthly=0;
+  if(retSSMode==="est") ssMonthly=est.monthly;
+  else if(retSSMode==="manual") ssMonthly=parseNum($("retSSManual"));
+  var spouse=parseNum($("retSSSpouse"));
+  ssMonthly+=spouse;
+  var ssStartT=(age!==null)? Math.max(0,claimAge-age) : R;
+  var otherMonthly=parseNum($("retOtherInc"));
+  var otherStartGiven=hasVal($("retOtherIncStart"));
+  var otherStartT=otherStartGiven? Math.max(0,parseInt($("retOtherIncStart").value,10)||0) : R;
+  return {R:R, age:age, expToday:expToday, infl:infl, postR:postR, cola:cola,
+    homeMode:retHomeMode, countOther:$("retCountOther").checked,
+    ssMonthly:ssMonthly, ssOwnMonthly:ssMonthly-spouse, spouse:spouse, claimAge:claimAge, ssStartT:ssStartT, est:est, yearsWorked:yearsWorked,
+    otherMonthly:otherMonthly, otherStartT:otherStartT, otherStartGiven:otherStartGiven};
+}
+function computeRetirement(s,o){
+  var R=o.R, inv=s.invested+s.otherAssets, prim=s.primaryEq, oth=s.otherPropEq;
+  function poolDisp(){ return inv+s.cash-s.debts+(o.countOther?oth:0)+(o.homeMode==="sell"?prim:0); }
+  var series=[{t:0,pool:poolDisp(),home:(o.homeMode==="last"?prim:0)}];
+  for(var t=1;t<=R;t++){
+    inv=inv*(1+s.r)+s.savings; prim=prim*(1+s.apprec); oth=oth*(1+s.apprec);
+    series.push({t:t,pool:poolDisp(),home:(o.homeMode==="last"?prim:0)});
+  }
+  var A=inv+s.cash-s.debts, B=oth, C=prim;
+  var pool=A+(o.countOther?B:0)+(o.homeMode==="sell"?C:0);
+  var curPool=pool, curHome=(o.homeMode==="last"?C:0);
+  var firstSpend=o.expToday*Math.pow(1+o.infl,R);
+  var maxY=(o.age!==null)? Math.max(1,100-(o.age+R)) : 60;
+  var rows=[], duration=null, homeStartY=null;
+  for(var y=0;y<maxY;y++){
+    var t=R+y;
+    var spend=o.expToday*Math.pow(1+o.infl,t);
+    var ssInc=(o.ssMonthly>0 && t>=o.ssStartT)? o.ssMonthly*12*Math.pow(1+o.cola,t) : 0;
+    var otherInc=(o.otherMonthly>0 && t>=o.otherStartT)? o.otherMonthly*12*Math.pow(1+o.infl,t) : 0;
+    var net=spend-ssInc-otherInc;
+    var start=curPool, avail=curPool*(1+o.postR), growth=avail-curPool, homeUsed=0, partial=false;
+    if(avail>=net){
+      curPool=avail-net;
+      if(curHome>0) curHome=curHome*(1+s.apprec);
+    } else {
+      var shortfall=net-avail;
+      if(o.homeMode==="last" && curHome>0){
+        var homeAvail=curHome*(1+s.apprec);
+        if(homeStartY===null) homeStartY=y;
+        if(homeAvail>=shortfall){
+          homeUsed=shortfall; curHome=homeAvail-shortfall; curPool=0;
+        } else {
+          homeUsed=homeAvail;
+          var frac=net>0? Math.max(0,Math.min(1,(avail+homeAvail)/net)) : 1;
+          duration=y+frac; curPool=0; curHome=0; partial=true;
+        }
+      } else {
+        var frac2=net>0? Math.max(0,Math.min(1,avail/net)) : 1;
+        duration=y+frac2; curPool=0; partial=true;
+      }
+    }
+    rows.push({y:y,t:t,age:(o.age!==null? o.age+t : null),start:start,growth:growth,ss:ssInc,other:otherInc,spend:spend,net:net,end:curPool,home:curHome,homeUsed:homeUsed});
+    series.push({t:t+1,pool:curPool,home:curHome});
+    if(partial) break;
+    if(curPool<=0 && curHome<=0){ duration=y+1; break; }
+  }
+  return {A:A,B:B,C:C,poolAtRet:pool,firstSpend:firstSpend,duration:duration,rows:rows,series:series,homeStartY:homeStartY,maxY:maxY};
+}
+function renderRetirement(s){
+  if(!s) s=readState();
+  var has=(s.assets>0||s.liab>0||s.income>0);
+  $("retExpFromTab1").textContent=fmt(s.expenses);
+  $("retPreReturnNote").textContent=(Math.round(s.r*1000)/10)+"%";
+  if(!has){
+    $("retVerdict").innerHTML='<span class="empty">Enter your numbers in Tab 1 (or load the sample), then set your retirement here.</span>';
+    $("retChart").innerHTML="";
+    return;
+  }
+  var o=buildRetOpts(s);
+  /* home card */
+  if(s.hasPrimary){
+    $("retHomeSummary").innerHTML="Primary home: <b>"+esc(s.primaryName)+"</b> · equity today <b class='mono'>"+fmt(s.primaryEq)+"</b> · its mortgage stays with it — both sides are set aside together when the home is excluded.";
+    $("retNoPrimaryNote").classList.add("hidden");
+  } else {
+    $("retHomeSummary").textContent="No primary home marked — all property equity is treated as other property below.";
+    $("retNoPrimaryNote").classList.toggle("hidden", s.propEq===0);
+  }
+  $("retHomeNote").textContent = o.homeMode==="keep"
+    ? "Your home is excluded. The answer below is how long your money lasts while you keep living in it."
+    : (o.homeMode==="last"
+      ? "Your home counts only after your other money runs out. Until then its equity grows at your property-appreciation assumption, not the market return — and the chart shades that final stretch gold."
+      : "Your home's equity joins the pool on retirement day (as if you sell or downsize then) and afterwards grows at your post-retirement return.");
+  /* SS display */
+  if(retSSMode==="est"){
+    $("retSSYearsWrap").classList.remove("hidden"); $("retSSManualWrap").classList.add("hidden");
+    $("retSSEst").textContent="~"+fmt(o.est.monthly)+"/mo at "+o.claimAge;
+    $("retSSDetail").textContent="Estimate: "+o.est.counted+" counted earning years (of 35) at capped earnings of "+fmt(o.est.capped)+"/yr give an AIME of "+fmt(o.est.aime)+"/mo and a full-benefit (age 67) amount of "+fmt(o.est.pia)+"/mo; claiming at "+o.claimAge+" pays "+Math.round(o.est.factor*100)+"% of that. 2026 SSA bend points ($1,286 / $7,749) and wage base ($184,500), full retirement age 67 — a ballpark, not your SSA figure."+(o.spouse>0? " Plus spouse "+fmt(o.spouse)+"/mo, starting the same year.":"");
+  } else if(retSSMode==="manual"){
+    $("retSSYearsWrap").classList.add("hidden"); $("retSSManualWrap").classList.remove("hidden");
+    $("retSSEst").textContent=o.ssOwnMonthly>0? fmt(o.ssOwnMonthly)+"/mo at "+o.claimAge : "— enter your benefit";
+    $("retSSDetail").textContent="Using your figure, in today's dollars, starting at age "+o.claimAge+" and rising at your COLA assumption."+(o.spouse>0? " Plus spouse "+fmt(o.spouse)+"/mo, starting the same year.":"");
+  } else {
+    $("retSSYearsWrap").classList.add("hidden"); $("retSSManualWrap").classList.add("hidden");
+    $("retSSEst").textContent="$0 — not counted";
+    $("retSSDetail").textContent="Social Security is left out of this run entirely — every year of spending comes out of the pool.";
+  }
+  var run=computeRetirement(s,o);
+  var thisYear=new Date().getFullYear();
+  /* buckets */
+  function bucketTxt(today,atRet){ return fmt(today)+"<small>today · "+fmt(atRet)+" at retirement</small>"; }
+  $("retBucketA").innerHTML=bucketTxt(s.invested+s.otherAssets+s.cash-s.debts, run.A);
+  $("retBucketB").innerHTML=bucketTxt(s.otherPropEq, run.B);
+  $("retBucketC").innerHTML=bucketTxt(s.primaryEq, run.C);
+  /* stats */
+  $("retPoolAtRet").textContent=fmt(run.poolAtRet);
+  $("retPoolSub").textContent="Liquid "+fmt(run.A)+(o.countOther? " + other property "+fmt(run.B):"")+(o.homeMode==="sell"? " + home "+fmt(run.C):"")+" · total net worth then "+fmt(run.A+run.B+run.C);
+  $("retSpendStat").textContent=fmt(run.firstSpend);
+  $("retSpendSub").textContent="in "+(thisYear+o.R)+", in that year's dollars — your "+fmt(o.expToday)+" today, inflated at "+(Math.round(o.infl*1000)/10)+"%/yr";
+  $("retFirstYearSpend").textContent=fmt(run.firstSpend);
+  if(run.duration===null){
+    $("retRunsOut").textContent=o.age!==null? "Age 100+" : "60+ yrs";
+    $("retRunsOutSub").textContent="still funded at the horizon ("+(o.age!==null? "age 100":"60 years of retirement")+")";
+  } else {
+    var outAge=o.age!==null? Math.floor(o.age+o.R+run.duration) : null;
+    $("retRunsOut").textContent=outAge!==null? "Age ~"+outAge : fmtYears(run.duration);
+    $("retRunsOutSub").textContent="around "+Math.floor(thisYear+o.R+run.duration)+" · "+fmtYears(run.duration)+" into retirement";
+  }
+  /* verdict */
+  var retirePhrase=o.R===0? "Retire today" : "Retire in "+o.R+(o.R===1?" year":" years");
+  if(o.age!==null) retirePhrase+=" at "+(o.age+o.R);
+  var homePhrase = o.homeMode==="keep" ? ' — <span class="good">without touching your home</span>.'
+    : o.homeMode==="last" ? ' — with the final stretch funded by <span class="good">your home equity</span> (last resort).'
+    : ' — <span class="good">including selling your home</span> when you retire.';
+  var verdict;
+  if(run.duration===null){
+    verdict=retirePhrase+", and your money is <span class='good'>still going "+(o.age!==null? "at age 100":"after 60 years of retirement")+"</span>"+homePhrase;
+  } else {
+    verdict=retirePhrase+", and your money lasts about <span class='good'>"+fmtYears(run.duration)+"</span>"+(o.age!==null? " — until roughly <span class='good'>age "+Math.floor(o.age+o.R+run.duration)+"</span> ("+Math.floor(thisYear+o.R+run.duration)+")" : " — until about "+Math.floor(thisYear+o.R+run.duration))+homePhrase;
+  }
+  if(o.ssMonthly>0){
+    var oNoSS=Object.assign({},o,{ssMonthly:0});
+    var runNoSS=computeRetirement(s,oNoSS);
+    if(runNoSS.duration!==null && run.duration===null){
+      verdict+=" Social Security from "+o.claimAge+" is part of why it lasts.";
+    } else if(runNoSS.duration!==null && run.duration!==null){
+      var delta=run.duration-runNoSS.duration;
+      if(delta>=0.3) verdict+=" Social Security from "+o.claimAge+" adds about "+fmtYears(delta)+".";
+    }
+    if(o.age===null) verdict+=" (Add your age to pin Social Security's start to your claiming age — without it, it's assumed to start when you retire.)";
+  }
+  $("retVerdict").innerHTML=verdict;
+  /* SS coverage */
+  var firstSSRow=null;
+  for(var ri=0;ri<run.rows.length;ri++){ if(run.rows[ri].ss>0){ firstSSRow=run.rows[ri]; break; } }
+  if(o.ssMonthly>0 && firstSSRow){
+    var pct=Math.round(firstSSRow.ss/Math.max(firstSSRow.spend,1)*100);
+    $("retSSCover").innerHTML="<b>Social Security covers about "+pct+"% of your spending</b> in its first year ("+(thisYear+firstSSRow.t)+"): "+fmt(firstSSRow.ss)+"/yr against "+fmt(firstSSRow.spend)+"/yr of spending. The rest comes out of the pool.";
+  } else if(o.ssMonthly>0){
+    $("retSSCover").textContent="Social Security starts after this plan's money runs out, so it never gets to offset any spending in this run.";
+  } else {
+    $("retSSCover").textContent="";
+  }
+  /* comparison */
+  var cand=[o.R];
+  [o.R-5,o.R+5].forEach(function(v){ var c=Math.max(0,Math.min(30,v)); if(cand.indexOf(c)<0) cand.push(c); });
+  cand.sort(function(a,b){return a-b;});
+  var ch='<table class="odds"><thead><tr><th>Retire in</th><th>Pool then</th><th>Lasts</th><th>Runs out</th></tr></thead><tbody>';
+  cand.forEach(function(cr){
+    var oo=Object.assign({},o,{R:cr});
+    if(!oo.otherStartGiven) oo.otherStartT=cr;
+    var rr=computeRetirement(s,oo);
+    var outTxt=rr.duration===null? (o.age!==null? "age 100+" : "60+ yrs") : (o.age!==null? "age ~"+Math.floor(o.age+cr+rr.duration)+" · "+Math.floor(thisYear+cr+rr.duration) : Math.floor(thisYear+cr+rr.duration));
+    ch+="<tr"+(cr===o.R? " style='background:var(--accent-soft)'":"")+"><td><b>"+cr+(cr===1?" yr":" yrs")+"</b>"+(cr===o.R? " · your pick":"")+"</td><td class='mono'>"+fmt(rr.poolAtRet)+"</td><td class='mono'>"+(rr.duration===null? "—" : fmtYears(rr.duration))+"</td><td class='mono'>"+outTxt+"</td></tr>";
+  });
+  ch+="</tbody></table>";
+  $("retCompare").innerHTML=ch;
+  /* year table */
+  var yh='<table class="odds"><thead><tr><th>Year</th><th>Age</th><th>Start</th><th>Growth</th><th>Income in</th><th>Spending</th><th>Left</th></tr></thead><tbody>';
+  run.rows.slice(0,80).forEach(function(rw){
+    yh+="<tr><td><b>"+(thisYear+rw.t)+"</b>"+(rw.homeUsed>0? " <span class='homeflag'>home tapped</span>":"")+"</td><td class='mono'>"+(rw.age!==null? rw.age:"—")+"</td><td class='mono'>"+fmt(rw.start)+"</td><td class='mono'>"+fmt(rw.growth)+"</td><td class='mono'>"+fmt(rw.ss+rw.other)+"</td><td class='mono'>"+fmt(rw.spend)+"</td><td class='mono'>"+fmt(rw.end)+"</td></tr>";
+  });
+  yh+="</tbody></table>";
+  $("retYearTable").innerHTML=yh;
+  drawRetChart(run,o,s);
+}
+function drawRetChart(run,o,s){
+  var box=$("retChart");
+  var series=run.series;
+  var maxV=0, maxT=0;
+  series.forEach(function(pt){ maxV=Math.max(maxV,pt.pool+pt.home); maxT=Math.max(maxT,pt.t); });
+  if(maxV<=0||maxT<=0){ box.innerHTML='<p class="empty">The chart appears once there is a positive pool to draw down.</p>'; return; }
+  var thisYear=new Date().getFullYear();
+  var W=720,Hg=300,pl=14,pr=118,pt=16,pb=28;
+  var top=maxV*1.06;
+  function X(t){ return pl+(t/maxT)*(W-pl-pr); }
+  function Y(v){ return pt+(1-v/top)*(Hg-pt-pb); }
+  var svg='<svg viewBox="0 0 '+W+' '+Hg+'" role="img" aria-label="Retirement pool over time: growth while working, then drawdown">';
+  for(var gi=0;gi<=4;gi++){
+    var gv=top*gi/4;
+    svg+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+Y(gv)+'" y2="'+Y(gv)+'" stroke="var(--line)"/>'
+      +'<text x="'+(pl+2)+'" y="'+(Y(gv)-4)+'" font-size="11" fill="var(--faint)" font-family="IBM Plex Mono,monospace">'+fmtShort(gv)+'</text>';
+  }
+  var step=maxT>30?10:5;
+  for(var xt=0;xt<=maxT;xt+=step){
+    var anch=xt===0?"start":(xt===maxT?"end":"middle");
+    svg+='<text x="'+X(xt)+'" y="'+(Hg-6)+'" font-size="11" fill="var(--faint)" text-anchor="'+anch+'">'+(thisYear+xt)+'</text>';
+  }
+  function pth(key){ return series.map(function(pt,i){ return (i?"L":"M")+X(pt.t).toFixed(1)+" "+Y(pt[key]).toFixed(1); }).join(" "); }
+  if(o.R>0 && o.R<maxT){
+    svg+='<line x1="'+X(o.R)+'" x2="'+X(o.R)+'" y1="'+pt+'" y2="'+(Hg-pb)+'" stroke="var(--faint)" stroke-dasharray="5 4"/>'
+      +'<text x="'+(X(o.R)+5)+'" y="'+(pt+10)+'" font-size="11.5" font-weight="700" fill="var(--muted)">you retire</text>';
+  }
+  if(o.ssMonthly>0 && o.ssStartT>0 && o.ssStartT<maxT){
+    svg+='<line x1="'+X(o.ssStartT)+'" x2="'+X(o.ssStartT)+'" y1="'+pt+'" y2="'+(Hg-pb)+'" stroke="var(--gold)" stroke-dasharray="2 4"/>'
+      +'<text x="'+(X(o.ssStartT)+5)+'" y="'+(Hg-pb-6)+'" font-size="11.5" font-weight="700" fill="var(--gold)">SS starts</text>';
+  }
+  var showHome=o.homeMode==="last" && series.some(function(pt){return pt.home>0;});
+  if(showHome) svg+='<path d="'+pth("home")+'" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-dasharray="7 4"/>';
+  svg+='<path d="'+pth("pool")+'" fill="none" stroke="var(--accent)" stroke-width="3"/>';
+  var lastPt=series[series.length-1];
+  svg+='<text x="'+(W-pr+8)+'" y="'+(Y(run.poolAtRet)+4)+'" font-size="12.5" font-weight="800" fill="var(--accent)">pool at retirement '+fmtShort(run.poolAtRet)+'</text>';
+  if(showHome) svg+='<text x="'+(W-pr+8)+'" y="'+(Y(run.C)+18)+'" font-size="12" font-weight="700" fill="var(--gold)">home '+fmtShort(run.C)+'</text>';
+  if(run.duration!==null) svg+='<text x="'+(W-pr+8)+'" y="'+(Y(0)-6)+'" font-size="12" font-weight="700" fill="var(--neg)">runs out ~'+Math.floor(thisYear+o.R+run.duration)+'</text>';
+  svg+="</svg>";
+  box.innerHTML=svg;
+}
+
 
 recalc();
 </script>
