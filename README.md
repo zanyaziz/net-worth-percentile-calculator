@@ -5,6 +5,7 @@ US distribution — and how long it would take to climb to the next rung if the 
 themselves keep rising.
 
 **Live:** https://zanyaziz.github.io/net-worth-percentile-calculator/
+**This calculator has moved — the canonical home is now https://zanyaziz.github.io/retirement-calculator/ (repo: https://github.com/zanyaziz/retirement-calculator). This copy stays up so old links keep working.**
 
 Everything runs in your browser. Nothing is stored, sent, or tracked — refresh the
 page and your numbers are gone.
